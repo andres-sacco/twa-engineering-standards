@@ -83,7 +83,7 @@ jobs:
 | `maven-args` | — | Argumentos extra para Maven en BLD-02 y BLD-04 (ej. `-pl search-service -am`) |
 | `artifact-name` / `artifact-path` | — | Sube el jar como artifact (glob relativo a `working-directory`) |
 | `docker-context` / `dockerfile` | `.` / `Dockerfile` | Relativos a `working-directory` |
-| `standards-ref` | la versión del release | **No se toca.** De esa versión de este repo salen los scripts y el catálogo. Única excepción: antes del primer release se fija al mismo commit que el `uses:` ([despliegue](despliegue.md#antes-del-primer-release)) |
+| `standards-ref` | la versión del release | **No se toca.** De esa versión de este repo salen los scripts y el catálogo. |
 
 Secret: `PACKAGES_TOKEN`, token clásico con `read:packages` para las librerías TWA de GitHub Packages. Sin él, el
 build solo baja dependencias públicas (sirve para un repo sin librerías TWA).

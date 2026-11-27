@@ -13,7 +13,7 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 [twa-layered-rules](https://github.com/andres-sacco/twa-layered-rules); este repo las ejecuta y reporta.
 
 **Estado:** etapas 0 a 8 terminadas; la 9, el despliegue, empieza con catalog como piloto ([plan](docs/plan.md),
-[despliegue](docs/despliegue.md)). Todavía no hay release: el piloto se fija a un commit de `main`.
+[despliegue](docs/despliegue.md)). Último release: `v0.1.0`.
 
 ## Qué revisa
 
