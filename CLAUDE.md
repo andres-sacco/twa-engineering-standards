@@ -25,11 +25,12 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
   que no es un comando de Maven (`check-build-versions.sh`, `check-architecture.sh`, `check-architecture-version.sh`,
   `coverage.sh`, `check-workflows.sh`, `check-renovate.sh`, `check-secrets.sh`, `check-sast.sh`, `check-spotbugs.sh`,
   `sbom.sh`, `check-vulnerabilities.sh`, `check-licenses.sh`, `openapi-export.sh`, `check-openapi-lint.sh`,
-  `check-openapi-breaking.sh`, `check-dockerfile.sh`, `check-image.sh`, `check-docker-policies.sh`), `maven-settings.sh`
-  y `lint.sh`.
+  `check-openapi-breaking.sh`, `check-dockerfile.sh`, `check-image.sh`, `check-docker-policies.sh`), `summary.sh` (resumen del job twa-standards), `report.sh` (tablero), `maven-settings.sh`
+  y `lint.sh`. `report` también deja el resultado en JSON (`record`): un control nuevo no necesita nada más para
+  aparecer en el resumen y en el tablero.
 - `examples/sample-service/`: servicio mínimo con la forma de los servicios TWA, para probar los workflows. No es una
   plantilla.
-- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `seguridad.md` (SEC-*), `openapi.md` (API-*), `docker.md` (DKR-*), `dependencias.md` (Renovate),
+- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `seguridad.md` (SEC-*), `openapi.md` (API-*), `docker.md` (DKR-*), `reportes.md` (resumen y tablero), `dependencias.md` (Renovate),
   `relevamiento.md`, `politica-de-severidades.md`, `versionado.md`.
 
 ## Reglas de trabajo

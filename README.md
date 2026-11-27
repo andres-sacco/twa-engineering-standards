@@ -11,12 +11,12 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 
 ## Estado
 
-Etapas 0 a 7 terminadas: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura,
+Etapas 0 a 8 terminadas: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura,
 seguridad (secretos, SAST, SBOM, vulnerabilidades y licencias), el contrato OpenAPI (convenciones con Spectral y cambios
 incompatibles con oasdiff), la imagen (Hadolint, vulnerabilidades de la base, políticas TWA y secretos en las capas),
 zizmor y el chequeo de Renovate (controles `BLD-*`, `TST-*`, `ARC-*`, `SEC-*`, `API-*`, `DKR-*`, `WFL-01` y `DEP-01`),
-y el preset de Renovate con su workflow self-hosted mantiene las dependencias. Faltan los reportes centrales (etapa 8)
-y el despliegue en los repos (etapa 9).
+y el preset de Renovate con su workflow self-hosted mantiene las dependencias. El job `twa-standards` resume todos los
+controles y `make report` arma el tablero de todos los repos. Falta el despliegue en los repos (etapa 9).
 Ningún repo lo usa todavía: el piloto con catalog es la etapa 9.
 
 ## Cómo se usa
@@ -51,6 +51,7 @@ make sample-image   # construye su imagen
 | Documento | Qué responde |
 |---|---|
 | [docs/uso.md](docs/uso.md) | Cómo un repo adopta `java-ci.yml`: su `ci.yml`, inputs, qué corre y qué cambia respecto del CI actual |
+| [docs/reportes.md](docs/reportes.md) | El resumen de cada PR, el artifact `twa-results`, el tablero (`make report`) y por qué no hay escaneo nocturno |
 | [docs/docker.md](docs/docker.md) | La imagen: Hadolint, vulnerabilidades de la base, las políticas TWA de Conftest y cómo exceptuarlas |
 | [docs/openapi.md](docs/openapi.md) | El contrato OpenAPI: cómo se exporta la spec, las reglas de Spectral, los cambios incompatibles y cómo aprobarlos |
 | [docs/seguridad.md](docs/seguridad.md) | Los controles de seguridad: herramientas, reportes, cómo suprimir un hallazgo y cómo probarlos en local |

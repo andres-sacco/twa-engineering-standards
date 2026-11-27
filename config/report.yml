@@ -1,0 +1,12 @@
+# Repos que entran en el tablero (scripts/report.sh, make report). Se agrega cada repo cuando adopta java-ci.yml
+# (etapa 9): el tablero lee el artifact twa-results del último push a su rama principal.
+repos:
+  - andres-sacco/twa-flights-catalog
+  - andres-sacco/twa-flights-exchange-rates
+  - andres-sacco/twa-flights-search
+  - andres-sacco/twa-flights-reservations
+  - andres-sacco/twa-flights-provider-alpha
+  - andres-sacco/twa-flights-provider-beta
+  - andres-sacco/twa-flights-provider-contract
+  - andres-sacco/twa-layered-rules
+  - andres-sacco/twa-hexagonal-rules

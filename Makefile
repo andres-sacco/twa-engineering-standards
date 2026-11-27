@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 SAMPLE := examples/sample-service
 
-.PHONY: help lint sample sample-image
+.PHONY: help lint sample sample-image report
 
 help: ## Lista los comandos
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -14,3 +14,6 @@ sample: ## Compila y testea el servicio de prueba (mvn verify, necesita Java 25)
 
 sample-image: ## Construye la imagen del servicio de prueba
 	@docker build --tag sample-service:local $(SAMPLE)
+
+report: ## Tablero: baja el twa-results de cada repo de config/report.yml y arma report/index.md (TWA_REPORT_TOKEN)
+	@./scripts/report.sh fetch report && ./scripts/report.sh render report

@@ -8,7 +8,8 @@ name: TWA Java CI
 # API-01, API-02, API-03) |
 # security (SEC-01, SEC-02 Semgrep, SEC-03, SEC-04, SEC-05) | image (DKR-01, DKR-02, DKR-03, DKR-04) |
 # repository (WFL-01, DEP-01)
-# → twa-standards. El último resume a los demás: es el check que se exige en la protección de la rama.
+# → twa-standards. El último resume a los demás (una tabla con todos los controles y el artifact twa-results): es el
+# check que se exige en la protección de la rama.
 on:
   workflow_call:
     inputs:
@@ -124,7 +125,11 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           mv .twa-standards "$RUNNER_TEMP/twa-standards"
-          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+          {
+            echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards"
+            echo "TWA_RESULTS_FILE=$RUNNER_TEMP/twa-results/style.jsonl"
+            echo "TWA_JOB=style"
+          } >>"$GITHUB_ENV"
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -143,6 +148,15 @@ jobs:
           "$STANDARDS_DIR/scripts/run-control.sh" BLD-01 "$SEVERITY"
           "El código no cumple el formato: corré mvn spotless:apply"
           -- mvn -B -ntp spotless:check
+      # El resultado de cada control de este job, para el resumen del job twa-standards
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twa-results-style
+          path: ${{ runner.temp }}/twa-results
+          if-no-files-found: ignore
+          retention-days: 7
 
   build:
     name: Build and test
@@ -169,7 +183,11 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           mv .twa-standards "$RUNNER_TEMP/twa-standards"
-          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+          {
+            echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards"
+            echo "TWA_RESULTS_FILE=$RUNNER_TEMP/twa-results/build.jsonl"
+            echo "TWA_JOB=build"
+          } >>"$GITHUB_ENV"
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -375,6 +393,15 @@ jobs:
           path: ${{ runner.temp }}/openapi-reports
           if-no-files-found: ignore
           retention-days: 7
+      # El resultado de cada control de este job, para el resumen del job twa-standards
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twa-results-build
+          path: ${{ runner.temp }}/twa-results
+          if-no-files-found: ignore
+          retention-days: 7
 
   security:
     name: Security
@@ -414,8 +441,12 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           mv .twa-standards "$RUNNER_TEMP/twa-standards"
-          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
-          echo "REPORTS_DIR=$RUNNER_TEMP/security-reports" >>"$GITHUB_ENV"
+          {
+            echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards"
+            echo "TWA_RESULTS_FILE=$RUNNER_TEMP/twa-results/security.jsonl"
+            echo "TWA_JOB=security"
+            echo "REPORTS_DIR=$RUNNER_TEMP/security-reports"
+          } >>"$GITHUB_ENV"
 
       # En la raíz del repo, no en working-directory: un secreto en cualquier carpeta cuenta
       - name: SEC-01 Gitleaks
@@ -496,6 +527,15 @@ jobs:
           path: ${{ runner.temp }}/security-reports/bom.json
           if-no-files-found: error
           retention-days: 30
+      # El resultado de cada control de este job, para el resumen del job twa-standards
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twa-results-security
+          path: ${{ runner.temp }}/twa-results
+          if-no-files-found: ignore
+          retention-days: 7
 
   image:
     name: Docker image
@@ -533,8 +573,12 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           mv .twa-standards "$RUNNER_TEMP/twa-standards"
-          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
-          echo "REPORTS_DIR=$RUNNER_TEMP/docker-reports" >>"$GITHUB_ENV"
+          {
+            echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards"
+            echo "TWA_RESULTS_FILE=$RUNNER_TEMP/twa-results/image.jsonl"
+            echo "TWA_JOB=image"
+            echo "REPORTS_DIR=$RUNNER_TEMP/docker-reports"
+          } >>"$GITHUB_ENV"
 
       # Sobre el Dockerfile: no hace falta construir
       - name: DKR-02 Hadolint
@@ -604,6 +648,15 @@ jobs:
           path: ${{ runner.temp }}/docker-reports
           if-no-files-found: ignore
           retention-days: 7
+      # El resultado de cada control de este job, para el resumen del job twa-standards
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twa-results-image
+          path: ${{ runner.temp }}/twa-results
+          if-no-files-found: ignore
+          retention-days: 7
 
   repository:
     name: Repository
@@ -627,7 +680,11 @@ jobs:
       - name: Standards
         run: |
           mv .twa-standards "$RUNNER_TEMP/twa-standards"
-          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+          {
+            echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards"
+            echo "TWA_RESULTS_FILE=$RUNNER_TEMP/twa-results/repository.jsonl"
+            echo "TWA_JOB=repository"
+          } >>"$GITHUB_ENV"
       - name: WFL-01 zizmor
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['WFL-01'] }}
@@ -636,21 +693,64 @@ jobs:
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DEP-01'] }}
         run: '"$STANDARDS_DIR/scripts/check-renovate.sh" "$SEVERITY"'
+      # El resultado de cada control de este job, para el resumen del job twa-standards
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twa-results-repository
+          path: ${{ runner.temp }}/twa-results
+          if-no-files-found: ignore
+          retention-days: 7
 
   twa-standards:
     name: twa-standards
     needs: [config, style, build, security, image, repository]
     if: always()
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: andres-sacco/twa-engineering-standards
+          ref: ${{ inputs.standards-ref }}
+          path: .twa-standards
+          persist-credentials: false
+      - name: Standards
+        run: |
+          mv .twa-standards "$RUNNER_TEMP/twa-standards"
+          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+      - name: Download results
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: twa-results-*
+          path: ${{ runner.temp }}/twa-results
+          merge-multiple: true
+      # Una tabla con todos los controles y twa-results.json, que lee el tablero (docs/reportes.md)
+      - name: Summary
+        if: needs.config.result == 'success'
+        env:
+          SEVERITIES: ${{ needs.config.outputs.severities }}
+          WORKING_DIRECTORY: ${{ inputs.working-directory }}
+          STANDARDS_REF: ${{ inputs.standards-ref }}
+        run: '"$STANDARDS_DIR/scripts/summary.sh" "$RUNNER_TEMP/twa-results" "$SEVERITIES" "$RUNNER_TEMP/twa-results.json"'
+      - name: Upload twa-results
+        if: needs.config.result == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: twa-results
+          path: ${{ runner.temp }}/twa-results.json
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Result
         env:
           RESULTS: ${{ toJSON(needs) }}
         run: |
           failed="$(jq -r 'to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key' <<<"$RESULTS")"
           if [[ -n "$failed" ]]; then
-            echo "::error::Fallaron: $(tr '\n' ' ' <<<"$failed")(los controles en block; ver el resumen de cada job)"
+            echo "::error::Fallaron: $(tr '\n' ' ' <<<"$failed")(los controles en block; ver el resumen de este job)"
             exit 1
           fi
-          echo "Todos los controles en block pasaron. Los avisos (warn) están en el resumen de cada job."
+          echo "Todos los controles en block pasaron. Los avisos (warn) están en el resumen de este job."

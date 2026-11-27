@@ -95,7 +95,18 @@ report() {
     echo "::warning title=${id} ${name}::${detail}"
   fi
   summary "| \`${id}\` ${name} | ${severity} | ${icon} | ${detail} |"
+  record "$id" "$name" "$severity" "$result" "$detail"
   [[ "$result" != "fail" || "$severity" != "block" ]]
+}
+
+# Deja el resultado de un control como una línea JSON en $TWA_RESULTS_FILE (si está definida): el job twa-standards
+# junta las de todos los jobs en un resumen y en el artifact twa-results, que lee el tablero (docs/reportes.md)
+record() {
+  [[ -n "${TWA_RESULTS_FILE:-}" ]] || return 0
+  mkdir -p "$(dirname "$TWA_RESULTS_FILE")"
+  jq -cn --arg id "$1" --arg name "$2" --arg severity "$3" --arg result "$4" --arg detail "$5" \
+    --arg job "${TWA_JOB:-}" '{id: $id, name: $name, severity: $severity, result: $result, detail: $detail, job: $job}' \
+    >>"$TWA_RESULTS_FILE"
 }
 
 # Escribe una salida del step (en local, a la consola)
