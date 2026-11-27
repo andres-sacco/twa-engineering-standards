@@ -1,0 +1,4 @@
+# Una clave que el schema no conoce es un error de tipeo, no una opción nueva
+version: 1
+type: service
+skipTests: true

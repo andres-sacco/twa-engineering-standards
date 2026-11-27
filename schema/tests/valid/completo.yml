@@ -1,0 +1,14 @@
+version: 1
+type: library
+java: "17"
+controls:
+  TST-01:
+    severity: block
+    params:
+      minLineCoverage: 70
+  DKR-02:
+    severity: "off"
+    reason: Una librería no tiene Dockerfile
+  SEC-03:
+    params:
+      ignoreUnfixed: true

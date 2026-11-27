@@ -1,0 +1,138 @@
+# Catálogo de controles: fuente de verdad de los ids, la severidad por defecto y la etapa en que se implementan.
+# La tabla de docs/politica-de-severidades.md y el JSON Schema de .twa-standards.yml se verifican contra este archivo
+# (make lint). Un id no se reusa: un control eliminado queda con `removed: true`.
+#
+# severity: la severidad por defecto (off | warn | block). appliesTo: los tipos de repo donde corre (service, library).
+controls:
+  BLD-01:
+    name: Formato del código
+    tool: Spotless
+    severity: block
+    stage: 2
+    appliesTo: [service, library]
+  BLD-02:
+    name: Compila y pasan los tests unitarios y de integración
+    tool: Maven, Surefire, Failsafe
+    severity: block
+    stage: 2
+    appliesTo: [service, library]
+  BLD-03:
+    name: Versiones de Java y Maven exigidas
+    tool: maven-enforcer-plugin
+    severity: warn
+    stage: 2
+    appliesTo: [service, library]
+  BLD-04:
+    name: Convergencia de dependencias y dependencias prohibidas
+    tool: maven-enforcer-plugin
+    severity: warn
+    stage: 2
+    appliesTo: [service, library]
+  TST-01:
+    name: Cobertura de líneas mínima
+    tool: JaCoCo
+    severity: warn
+    stage: 2
+    appliesTo: [service, library]
+  TST-02:
+    name: La cobertura no baja respecto de main
+    tool: JaCoCo
+    severity: warn
+    stage: 2
+    appliesTo: [service, library]
+  ARC-01:
+    name: Reglas de arquitectura de twa-layered-rules / twa-hexagonal-rules
+    tool: ArchUnit (librería existente)
+    severity: block
+    stage: 3
+    appliesTo: [service]
+  ARC-02:
+    name: Versión mínima de la librería de reglas
+    tool: maven-enforcer-plugin
+    severity: warn
+    stage: 3
+    appliesTo: [service]
+  SEC-01:
+    name: Secretos en el código y en el historial del PR
+    tool: Gitleaks
+    severity: block
+    stage: 4
+    appliesTo: [service, library]
+  SEC-02:
+    name: Análisis estático de seguridad
+    tool: Semgrep CE, SpotBugs + FindSecBugs
+    severity: warn
+    stage: 4
+    appliesTo: [service, library]
+  SEC-03:
+    name: Vulnerabilidades CRITICAL/HIGH con versión corregida en dependencias
+    tool: Trivy (fs), OSV-Scanner
+    severity: warn
+    stage: 4
+    appliesTo: [service, library]
+  SEC-04:
+    name: SBOM generado y publicado como artifact
+    tool: CycloneDX Maven plugin
+    severity: warn
+    stage: 4
+    appliesTo: [service, library]
+  SEC-05:
+    name: Licencias de dependencias fuera de la lista permitida
+    tool: Trivy (license)
+    severity: warn
+    stage: 4
+    appliesTo: [service, library]
+  API-01:
+    name: La spec OpenAPI se exporta en el build
+    tool: springdoc-openapi-maven-plugin
+    severity: warn
+    stage: 5
+    appliesTo: [service]
+  API-02:
+    name: La spec cumple las convenciones de la plataforma
+    tool: Spectral
+    severity: warn
+    stage: 5
+    appliesTo: [service]
+  API-03:
+    name: Sin cambios incompatibles contra main sin aprobación explícita
+    tool: oasdiff
+    severity: warn
+    stage: 5
+    appliesTo: [service]
+  DKR-01:
+    name: La imagen construye
+    tool: Docker Buildx
+    severity: block
+    stage: 6
+    appliesTo: [service]
+  DKR-02:
+    name: Buenas prácticas del Dockerfile
+    tool: Hadolint
+    severity: warn
+    stage: 6
+    appliesTo: [service]
+  DKR-03:
+    name: Vulnerabilidades CRITICAL/HIGH con fix en la imagen
+    tool: Trivy (image)
+    severity: warn
+    stage: 6
+    appliesTo: [service]
+  DKR-04:
+    name: Políticas TWA de la imagen
+    tool: Conftest (OPA), Dockle
+    severity: warn
+    stage: 6
+    appliesTo: [service]
+  DEP-01:
+    name: El repo usa el preset de Renovate
+    tool: Renovate
+    severity: warn
+    stage: 7
+    appliesTo: [service, library]
+  WFL-01:
+    name: Actions fijadas por SHA y permissions mínimos
+    tool: zizmor
+    severity: warn
+    stage: 2
+    appliesTo: [service, library]

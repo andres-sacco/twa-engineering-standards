@@ -11,7 +11,34 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 
 ## Estado
 
-Etapa 0: decisión y relevamiento. Todavía no hay workflows para consumir.
+Etapa 1 (base del repo) terminada: catálogo de controles, schema de `.twa-standards.yml`, CI propio, versionado y
+servicio de prueba. Todavía no hay workflows reutilizables para consumir: llegan con la etapa 2.
+
+## Cómo se usa (desde la etapa 2)
+
+Cada repo tiene un `.twa-standards.yml` en la raíz con lo que cambia respecto de los defaults:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/andres-sacco/twa-engineering-standards/main/schema/twa-standards.schema.json
+version: 1
+type: service        # service | library
+java: "25"
+controls:
+  TST-01:
+    params:
+      minLineCoverage: 60
+  DKR-02:
+    severity: "off"
+    reason: Explicación de por qué este repo lo apaga
+```
+
+## Comandos
+
+```bash
+make lint           # workflows (actionlint, zizmor), schema, catálogo de controles y scripts
+make sample         # compila y testea el servicio de prueba
+make sample-image   # construye su imagen
+```
 
 ## Documentación
 
@@ -19,4 +46,6 @@ Etapa 0: decisión y relevamiento. Todavía no hay workflows para consumir.
 |---|---|
 | [docs/plan.md](docs/plan.md) | Las etapas, qué entrega cada una y con qué herramientas |
 | [docs/relevamiento.md](docs/relevamiento.md) | Cómo se construyen y validan hoy los repos TWA, y qué falta |
+| [config/controls.yml](config/controls.yml) | El catálogo de controles: id, severidad por defecto, herramienta y etapa |
+| [docs/versionado.md](docs/versionado.md) | Tags, qué es un cambio incompatible y cómo se publica un release |
 | [docs/politica-de-severidades.md](docs/politica-de-severidades.md) | Qué significa `off`, `warn` y `block`, cuándo un control pasa a bloquear y el catálogo de controles con su id |

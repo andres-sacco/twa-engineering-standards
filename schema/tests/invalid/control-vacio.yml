@@ -1,0 +1,5 @@
+# Un control sin severity ni params no cambia nada
+version: 1
+type: service
+controls:
+  TST-01: {}

@@ -1,0 +1,4 @@
+# java va como texto: 25 sin comillas es un número
+version: 1
+type: service
+java: 25

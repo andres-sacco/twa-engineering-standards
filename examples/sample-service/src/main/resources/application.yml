@@ -1,0 +1,20 @@
+server:
+  servlet:
+    context-path: /api/flights/sample
+  port: 8080
+
+spring:
+  application:
+    name: sample-service
+
+# Como los servicios: Actuator en la raíz del base path, con los probes de liveness y readiness
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

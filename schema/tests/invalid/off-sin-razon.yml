@@ -1,0 +1,6 @@
+# Apagar un control exige una razón
+version: 1
+type: service
+controls:
+  SEC-01:
+    severity: "off"
