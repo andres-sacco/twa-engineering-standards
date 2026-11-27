@@ -14,7 +14,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 6 | Docker | En el job `Docker image`: Hadolint, la imagen construida y cargada en el runner, Trivy sobre los paquetes del sistema operativo y los secretos de las capas, y las políticas TWA con Conftest. Ver [docker](docker.md) | Hadolint, Trivy, Conftest. Sin Dockle; Cosign y Syft cuando se publiquen imágenes | Hecha |
 | 7 | Dependencias | Preset central de Renovate (grupos, 3 días de espera, actions e imágenes por digest, automerge de patch con CI verde), Renovate self-hosted en `renovate.yml` y DEP-01. Ver [dependencias](dependencias.md) | Renovate, renovate-config-validator | Hecha |
 | 8 | Reportes | Una tabla con todos los controles en el job `twa-standards` y el artifact `twa-results`; tablero con el último push de cada repo (`make report`). Sin escaneo nocturno. Ver [reportes](reportes.md) | `$GITHUB_STEP_SUMMARY`, artifacts, jq | Hecha |
-| 9 | Despliegue | catalog como piloto; después exchange-rates, proveedores, search, reservations y las librerías. `warn` → `block` según la política | Branch protection, CODEOWNERS | — |
+| 9 | Despliegue | catalog como piloto; después exchange-rates, proveedores, search, reservations y las librerías. `warn` → `block` según la política. Ver [despliegue](despliegue.md) | Branch protection (check `ci / twa-standards`). CODEOWNERS cuando haya más de un mantenedor | En curso: piloto con catalog |
 
 ## Estructura objetivo
 
@@ -117,6 +117,10 @@ twa-engineering-standards/
 * Las etapas 4 a 6 seguían pendientes: `implementedStages` del catálogo reemplaza a un número de etapa.
 
 ## A validar
+
+* El release `v0.1.0`: el workflow `Release` falla hasta que el repo permita escribir al `GITHUB_TOKEN`
+  ([despliegue](despliegue.md#antes-del-primer-release)).
+* CODEOWNERS en cada repo cuando haya más de un mantenedor.
 
 * Dónde se publica el tablero de la etapa 8 (`report.json`): un workflow en un repo privado, `twa-data`/Metabase o
   solo local.
