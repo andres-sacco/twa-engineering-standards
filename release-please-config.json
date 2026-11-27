@@ -43,6 +43,7 @@
       "hidden": true
     }
   ],
+  "initial-version": "0.1.0",
   "packages": {
     ".": {
       "extra-files": [
