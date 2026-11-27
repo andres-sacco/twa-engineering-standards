@@ -53,7 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           for tag in "v${MAJOR}" "v${MAJOR}.${MINOR}"; do
-            if gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" >/dev/null 2>&1; then
+            # git/ref (singular) busca el tag exacto; git/refs/tags/v0 también devuelve v0.1.0 (busca por prefijo)
+            if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null 2>&1; then
               gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$SHA" -F force=true >/dev/null
             else
               gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="$SHA" >/dev/null

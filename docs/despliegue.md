@@ -8,7 +8,7 @@ por vez. Los controles nuevos entran en `warn`; pasan a `block` en cada repo seg
 
 | # | Repo | Tipo | Estado | Notas |
 |---|---|---|---|---|
-| 1 | twa-flights-catalog | service | **Piloto: cambios listos, sin mergear** | Ver [el piloto](#el-piloto-catalog) |
+| 1 | twa-flights-catalog | service | **Piloto: PR abierto, con `v0.1.0`** | Ver [el piloto](#el-piloto-catalog) |
 | 2 | twa-flights-exchange-rates | service | — | `amount` y `rate` como `number` en la spec: API-02 lo marca (`twa-amount-as-string`) |
 | 3 | twa-flights-provider-alpha / -beta | service | — | Implementan `twa-flights-provider-contract`: misma configuración en los dos |
 | 4 | twa-flights-search | service | — | |
@@ -49,24 +49,10 @@ CODEOWNERS no se agrega todavía: con un solo mantenedor, exigir la revisión de
 Cuando haya más de una persona, `.twa-standards.yml` y `.github/workflows/` pasan a tener dueño en cada repo, para que
 bajar una severidad lo revise alguien más (**a validar**).
 
-## Antes del primer release
+## Qué versión usar
 
-Mientras este repo no tenga un release (`v0.1.0`), un repo no puede usar el default de `standards-ref` (`v0.0.0`,
-que no existe). El piloto fija el workflow **y** `standards-ref` al mismo commit de `main`:
-
-```yaml
-    uses: andres-sacco/twa-engineering-standards/.github/workflows/java-ci.yml@<sha de main> # main
-    with:
-      standards-ref: <el mismo sha>
-```
-
-Con el primer release, el `uses:` pasa al SHA del tag `v0.1.0` (comentario `# v0.1.0`) y se saca `standards-ref`.
-Desde ahí lo actualiza Renovate.
-
-El workflow `Release` fallaba en `release-please` con `Error adding to tree`: el PR de release cambia
-`.github/workflows/java-ci.yml` y el `GITHUB_TOKEN` no puede tocar workflows. Ahora usa el secret
-`RELEASE_PLEASE_TOKEN` ([versionado](versionado.md#el-token-de-release-please)); con ese secret cargado, el próximo
-push a `main` (o volver a correr `Release`) abre el PR de `v0.1.0`.
+El último release (`v0.1.0` en adelante), fijado por el SHA de su tag con la versión en el comentario
+([uso](uso.md#2-githubworkflowsciyml)); `standards-ref` no se pasa. Renovate abre el PR de cada release nuevo.
 
 ## El piloto: catalog
 
