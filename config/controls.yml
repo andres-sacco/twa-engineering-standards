@@ -6,7 +6,7 @@
 # stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa que no está en implementedStages
 # se pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
 # se combinan encima.
-implementedStages: [1, 2, 3, 4, 5, 7]
+implementedStages: [1, 2, 3, 4, 5, 6, 7]
 controls:
   BLD-01:
     name: Formato del código
@@ -165,16 +165,21 @@ controls:
     appliesTo: [service]
   DKR-03:
     name: Vulnerabilidades CRITICAL/HIGH con fix en la imagen
-    tool: Trivy (image)
+    tool: Trivy (image, paquetes del sistema operativo)
     severity: warn
     stage: 6
     appliesTo: [service]
+    params:
+      severities: [CRITICAL, HIGH]
   DKR-04:
     name: Políticas TWA de la imagen
-    tool: Conftest (OPA), Dockle
+    tool: Conftest (OPA), Trivy (secretos en las capas)
     severity: warn
     stage: 6
     appliesTo: [service]
+    params:
+      # Políticas de config/conftest/dockerfile.rego que el repo exceptúa (TWA-DOCKER-NN), con la razón en un comentario
+      exceptions: []
   DEP-01:
     name: El repo usa el preset de Renovate y no Dependabot
     tool: Renovate

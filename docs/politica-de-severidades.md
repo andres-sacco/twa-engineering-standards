@@ -51,8 +51,8 @@ Los ids son estables: un control que se elimina no reusa su id. La fuente de ver
 | `API-03` | Sin cambios incompatibles contra `main` sin aprobación explícita | oasdiff | warn | 5 |
 | `DKR-01` | La imagen construye | Docker Buildx | block (ya bloquea) | 2 |
 | `DKR-02` | Buenas prácticas del Dockerfile | Hadolint | warn | 6 |
-| `DKR-03` | Vulnerabilidades CRITICAL/HIGH con fix en la imagen | Trivy (image) | warn | 6 |
-| `DKR-04` | Políticas TWA: usuario sin privilegios, `HEALTHCHECK`, base `eclipse-temurin`, sin secretos en capas | Conftest (OPA), Dockle | warn | 6 |
+| `DKR-03` | Vulnerabilidades CRITICAL/HIGH con fix en la imagen | Trivy (image, paquetes del sistema operativo) | warn | 6 |
+| `DKR-04` | Políticas TWA: usuario sin privilegios, `HEALTHCHECK`, base `eclipse-temurin`, sin secretos en capas | Conftest (OPA), Trivy (secretos en las capas) | warn | 6 |
 | `DEP-01` | El repo usa el preset de Renovate y no Dependabot | Renovate | warn | 7 |
 | `WFL-01` | Actions fijadas por SHA y `permissions` mínimos | zizmor | warn | 2 |
 

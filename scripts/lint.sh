@@ -98,6 +98,30 @@ else
   fail "invalida.yaml no rompe: ${missing[*]}"
 fi
 
+section "Conftest ${CONFTEST_VERSION%@*}: config/conftest/dockerfile.rego"
+conftest_ids() {
+  docker run --rm -v "$ROOT:/project:ro" -w /project "openpolicyagent/conftest:${CONFTEST_VERSION}" test \
+    --policy config/conftest --parser dockerfile --no-fail --output json "$@" 2>/dev/null |
+    jq -r '.[].failures[]?.msg | split(":")[0]' | sort -u
+}
+found="$(conftest_ids examples/sample-service/Dockerfile)"
+if [[ -z "$found" ]]; then
+  ok "examples/sample-service/Dockerfile cumple las políticas"
+else
+  fail "examples/sample-service/Dockerfile no cumple: $(tr '\n' ' ' <<<"$found")"
+fi
+# Cada política (TWA-DOCKER-NN) tiene que fallar en algún Dockerfile de config/conftest/tests
+found="$(conftest_ids config/conftest/tests/*.Dockerfile)"
+missing=()
+while read -r id; do
+  grep -qx "$id" <<<"$found" || missing+=("$id")
+done < <(grep -oE 'TWA-DOCKER-[0-9]{2}' config/conftest/dockerfile.rego | sort -u)
+if [[ -n "$found" && ${#missing[@]} -eq 0 ]]; then
+  ok "config/conftest/tests rompe todas las políticas"
+else
+  fail "config/conftest/tests no rompe: ${missing[*]:-ninguna (¿conftest no corrió?)}"
+fi
+
 section "Catálogo de controles (${CATALOG})"
 mapfile -t ids < <(yq '.controls | keys | .[]' "$CATALOG")
 for id in "${ids[@]}"; do

@@ -33,6 +33,12 @@ TRIVY_VERSION="0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166
 # shellcheck disable=SC2034
 # renovate: datasource=docker depName=tufin/oasdiff
 OASDIFF_VERSION="v1.37.0@sha256:ff02af37a254b5199b9d72e7bba93dae5837a9119d59459168d1398893b47aea"
+# shellcheck disable=SC2034
+# renovate: datasource=docker depName=hadolint/hadolint
+HADOLINT_VERSION="v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d"
+# shellcheck disable=SC2034
+# renovate: datasource=docker depName=openpolicyagent/conftest
+CONFTEST_VERSION="v0.71.1@sha256:0e77cdf7c1fcde035f3c579e4aaa6664ee2a8be5777eaa9af9f520cdd02280c0"
 
 STANDARDS_DIR="${STANDARDS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CATALOG="${STANDARDS_DIR}/config/controls.yml"
