@@ -53,7 +53,7 @@ Los ids son estables: un control que se elimina no reusa su id. La fuente de ver
 | `DKR-02` | Buenas prácticas del Dockerfile | Hadolint | warn | 6 |
 | `DKR-03` | Vulnerabilidades CRITICAL/HIGH con fix en la imagen | Trivy (image) | warn | 6 |
 | `DKR-04` | Políticas TWA: usuario sin privilegios, `HEALTHCHECK`, base `eclipse-temurin`, sin secretos en capas | Conftest (OPA), Dockle | warn | 6 |
-| `DEP-01` | El repo usa el preset de Renovate | Renovate | warn | 7 |
+| `DEP-01` | El repo usa el preset de Renovate y no Dependabot | Renovate | warn | 7 |
 | `WFL-01` | Actions fijadas por SHA y `permissions` mínimos | zizmor | warn | 2 |
 
 Los seis servicios ya cumplen `DKR-04`: es candidato a pasar a `block` apenas se implemente.

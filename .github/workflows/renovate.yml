@@ -1,0 +1,50 @@
+name: Renovate
+
+# Renovate self-hosted (open source) sobre los repos TWA que tienen un renovate.json: abre los PRs de dependencias según
+# renovate/default.json. Corre cada 6 horas; el preset decide cuándo abrir PRs (los lunes, o enseguida si es un arreglo
+# de seguridad). Detalle y secrets necesarios en docs/dependencias.md.
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      log-level:
+        description: Nivel de log de Renovate
+        type: choice
+        options: [info, debug]
+        default: info
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  renovate:
+    name: Renovate
+    # Solo en este repo: un fork no tiene los secrets
+    if: github.repository == 'andres-sacco/twa-engineering-standards'
+    runs-on: ubuntu-latest
+    # Renovate usa RENOVATE_TOKEN, no el GITHUB_TOKEN del workflow
+    permissions: {}
+    steps:
+      - uses: renovatebot/github-action@1376d90bcd3a4d4e7393ae762eea56ac684aee38 # v48.0.0
+        env:
+          LOG_LEVEL: ${{ inputs.log-level || 'info' }}
+          RENOVATE_PLATFORM: github
+          # Todos los repos twa-* a los que llega el token, pero solo los que ya tienen su renovate.json: la adopción
+          # es repo por repo (etapa 9), no un PR de onboarding en cada uno
+          RENOVATE_AUTODISCOVER: 'true'
+          RENOVATE_AUTODISCOVER_FILTER: andres-sacco/twa-*
+          RENOVATE_REQUIRE_CONFIG: required
+          RENOVATE_ONBOARDING: 'false'
+          RENOVATE_GIT_AUTHOR: 'Renovate Bot <bot@renovateapp.com>'
+          # Las librerías TWA están en GitHub Packages
+          RENOVATE_HOST_RULES: >-
+            [{"matchHost": "maven.pkg.github.com", "hostType": "maven",
+            "username": "${{ github.repository_owner }}", "password": "${{ secrets.PACKAGES_TOKEN }}"}]
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+          # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
+          renovate-version: 44.236.5

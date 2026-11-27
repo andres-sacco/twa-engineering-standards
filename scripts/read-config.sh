@@ -29,7 +29,7 @@ rank() {
 }
 
 type="$(yq '.type' "$CONFIG")"
-implemented_stage="$(yq '.implementedStage' "$CATALOG")"
+mapfile -t implemented_stages < <(yq '.implementedStages[]' "$CATALOG")
 java="$(yq ".java // \"${DEFAULT_JAVA}\"" "$CONFIG")"
 architecture="$(yq '.architecture // "layered"' "$CONFIG")"
 severities='{}'
@@ -61,7 +61,7 @@ while read -r id; do
   fi
   severities="$(jq -c --arg id "$id" --arg s "$effective" '. + {($id): $s}' <<<"$severities")"
   name="$(control_name "$id")"
-  if (($(yq ".controls.\"${id}\".stage" "$CATALOG") > implemented_stage)); then
+  if ! printf '%s\n' "${implemented_stages[@]}" | grep -qx "$(yq ".controls.\"${id}\".stage" "$CATALOG")"; then
     name="${name} _(todavía no corre)_"
   fi
   if [[ -n "$override" && "$override" != "$default" ]]; then

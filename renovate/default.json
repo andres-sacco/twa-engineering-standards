@@ -1,0 +1,184 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Preset de Renovate de los repos TWA (DEP-01). Cada repo lo usa con extends github>andres-sacco/twa-engineering-standards//renovate/default. Detalle en docs/dependencias.md",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
+  "timezone": "America/Argentina/Buenos_Aires",
+  "schedule": [
+    "before 7am on monday"
+  ],
+  "prConcurrentLimit": 8,
+  "prHourlyLimit": 4,
+  "labels": [
+    "dependencies"
+  ],
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "commitMessageAction": "actualiza",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "a {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}{{prettyNewMajor}}{{else}}{{#if isSingleVersion}}{{prettyNewVersion}}{{else}}{{{newValue}}}{{/if}}{{/if}}{{/if}}",
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "vulnerabilityAlerts": {
+    "description": "Un arreglo de seguridad sale enseguida, sin esperar el lunes ni los 3 días",
+    "labels": [
+      "dependencies",
+      "security"
+    ],
+    "schedule": [
+      "at any time"
+    ],
+    "minimumReleaseAge": null
+  },
+  "customManagers": [
+    {
+      "description": "Versiones fijadas en scripts y workflows con un comentario '# renovate: datasource=… depName=…' en la línea anterior",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)scripts/[^/]+\\.sh$/",
+        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+)\\s+depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>\\S+))?\\s*\\n\\s*[A-Za-z_-]+[:=]\\s*\"?(?<currentValue>[^\"\\s]+)\"?"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Spring Boot (parent, BOM y plugin) va junto: es una sola actualización de la plataforma",
+      "matchDatasources": [
+        "maven"
+      ],
+      "matchPackageNames": [
+        "org.springframework.boot:**"
+      ],
+      "groupName": "Spring Boot"
+    },
+    {
+      "description": "Plugins de Maven, juntos",
+      "matchDatasources": [
+        "maven"
+      ],
+      "matchDepTypes": [
+        "build"
+      ],
+      "groupName": "plugins de Maven"
+    },
+    {
+      "description": "Dependencias de test, juntas (no llegan a la imagen)",
+      "matchDatasources": [
+        "maven"
+      ],
+      "matchDepTypes": [
+        "test"
+      ],
+      "groupName": "dependencias de test"
+    },
+    {
+      "description": "Las librerías TWA son nuestras: sin espera, sin automerge (cambian reglas o el contrato) y con su propia etiqueta",
+      "matchDatasources": [
+        "maven"
+      ],
+      "matchPackageNames": [
+        "com.twa:**",
+        "com.twa.flights:twa-flights-provider-contract"
+      ],
+      "groupName": "librerías TWA",
+      "minimumReleaseAge": null,
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "twa"
+      ]
+    },
+    {
+      "description": "twa-engineering-standards (java-ci.yml, por SHA con la versión en el comentario): sin espera y sin automerge, un control nuevo puede cambiar el resultado del CI",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "andres-sacco/twa-engineering-standards"
+      ],
+      "groupName": "twa-engineering-standards",
+      "minimumReleaseAge": null,
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "twa"
+      ]
+    },
+    {
+      "description": "Las demás actions, juntas, una vez por mes",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "!andres-sacco/**"
+      ],
+      "groupName": "GitHub Actions",
+      "schedule": [
+        "before 7am on the first day of the month"
+      ]
+    },
+    {
+      "description": "Las imágenes de Docker no informan la fecha de publicación: sin la espera de 3 días (si no, no saldrían nunca)",
+      "matchDatasources": [
+        "docker"
+      ],
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "Imágenes base de los Dockerfile: un cambio de versión mayor de Java es una decisión de arquitectura (ADR-0003), no un PR automático",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "maven",
+        "eclipse-temurin"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Imágenes base: los digest y los patch se mergean solos con el CI en verde",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchUpdateTypes": [
+        "digest",
+        "patch",
+        "pinDigest"
+      ],
+      "groupName": "imágenes base",
+      "automerge": true
+    },
+    {
+      "description": "Toda versión mayor necesita aprobación en el Dependency Dashboard",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Patch de terceros: automerge con el CI en verde (el check requerido de la rama decide)",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "matchPackageNames": [
+        "!com.twa:**",
+        "!com.twa.flights:**",
+        "!andres-sacco/**"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ]
+}

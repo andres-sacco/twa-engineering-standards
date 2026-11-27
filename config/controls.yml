@@ -3,10 +3,10 @@
 # (make lint). Un id no se reusa: un control eliminado queda con `removed: true`.
 #
 # severity: la severidad por defecto (off | warn | block). appliesTo: los tipos de repo donde corre (service, library).
-# stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa mayor que implementedStage se
-# pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
+# stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa que no está en implementedStages
+# se pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
 # se combinan encima.
-implementedStage: 3
+implementedStages: [1, 2, 3, 7]
 controls:
   BLD-01:
     name: Formato del código
@@ -139,7 +139,7 @@ controls:
     stage: 6
     appliesTo: [service]
   DEP-01:
-    name: El repo usa el preset de Renovate
+    name: El repo usa el preset de Renovate y no Dependabot
     tool: Renovate
     severity: warn
     stage: 7

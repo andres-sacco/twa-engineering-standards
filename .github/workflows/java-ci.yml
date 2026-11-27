@@ -5,7 +5,7 @@ name: TWA Java CI
 # severidad es block (docs/politica-de-severidades.md). Uso y migración: docs/uso.md.
 #
 # Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02) | image (DKR-01) |
-# workflows (WFL-01)
+# repository (WFL-01, DEP-01)
 # → twa-standards. El
 # último resume a los demás: es el check que se exige en la protección de la rama.
 on:
@@ -52,7 +52,9 @@ permissions: {}
 
 env:
   # Versiones fijadas de los plugins que se agregan por línea de comandos (el pom del repo no los declara)
+  # renovate: datasource=maven depName=org.jacoco:jacoco-maven-plugin
   JACOCO_VERSION: 0.8.16
+  # renovate: datasource=maven depName=org.apache.maven.plugins:maven-enforcer-plugin
   ENFORCER_VERSION: 3.7.0
 
 jobs:
@@ -343,10 +345,12 @@ jobs:
             report DKR-01 "$SEVERITY" fail "La imagen no construye: ver el log del step anterior"
           fi
 
-  workflows:
-    name: Workflows
+  repository:
+    name: Repository
     needs: config
-    if: fromJSON(needs.config.outputs.severities)['WFL-01'] != 'off'
+    if: >-
+      fromJSON(needs.config.outputs.severities)['WFL-01'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['DEP-01'] != 'off'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -368,10 +372,14 @@ jobs:
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['WFL-01'] }}
         run: '"$STANDARDS_DIR/scripts/check-workflows.sh" "$SEVERITY"'
+      - name: DEP-01 Renovate
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DEP-01'] }}
+        run: '"$STANDARDS_DIR/scripts/check-renovate.sh" "$SEVERITY"'
 
   twa-standards:
     name: twa-standards
-    needs: [config, style, build, image, workflows]
+    needs: [config, style, build, image, repository]
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
