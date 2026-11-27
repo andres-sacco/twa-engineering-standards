@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.1.1...v0.1.2) (2026-11-27)
+
+
+### Correcciones
+
+* la cuota de artifacts no bloquea el CI ([da53cae](https://github.com/andres-sacco/twa-engineering-standards/commit/da53cae4e21027e26a02e4706178ea5e785e3550))
+* la cuota de artifacts no bloquea el CI ([f6f52bb](https://github.com/andres-sacco/twa-engineering-standards/commit/f6f52bb23b1df9b30ff24f4e24096233290c63cf))
+
 ## [0.1.1](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.1.0...v0.1.1) (2026-11-27)
 
 
