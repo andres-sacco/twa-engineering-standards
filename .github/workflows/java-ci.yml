@@ -44,7 +44,7 @@ on:
       standards-ref:
         description: Versión de twa-engineering-standards de la que salen los scripts y el catálogo. No cambiarla
         type: string
-        default: v0.0.0 # x-release-please-version
+        default: v0.1.0 # x-release-please-version
     secrets:
       PACKAGES_TOKEN:
         description: Token clásico con read:packages para las librerías TWA de GitHub Packages
