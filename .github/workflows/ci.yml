@@ -1,0 +1,51 @@
+name: CI
+
+# CI de este repo: valida los workflows, el schema y el catálogo de controles (make lint), y que el servicio de prueba
+# construya. Las actions van fijadas por SHA, con la versión en el comentario (WFL-01).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # actionlint (Docker), zizmor y check-jsonschema (pipx), y los chequeos de consistencia de scripts/lint.sh
+      - name: make lint
+        run: make lint
+
+  sample-service:
+    name: Sample service
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: examples/sample-service
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: examples/sample-service/pom.xml
+      - name: Build and test
+        run: mvn -B -ntp verify
+      - name: Build image
+        run: docker build --tag sample-service:ci .

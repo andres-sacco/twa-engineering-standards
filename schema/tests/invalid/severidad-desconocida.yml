@@ -1,0 +1,5 @@
+version: 1
+type: service
+controls:
+  TST-01:
+    severity: error

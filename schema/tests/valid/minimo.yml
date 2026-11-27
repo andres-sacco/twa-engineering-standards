@@ -1,0 +1,3 @@
+# Lo mínimo: todos los controles con su default
+version: 1
+type: service

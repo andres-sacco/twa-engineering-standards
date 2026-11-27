@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/twa-standards.schema.json
+# Configuración del servicio de prueba: los defaults, salvo la cobertura, que acá se exige porque el código es mínimo
+version: 1
+type: service
+java: "25"
+controls:
+  TST-01:
+    severity: block
+    params:
+      minLineCoverage: 80

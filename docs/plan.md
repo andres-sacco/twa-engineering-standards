@@ -5,8 +5,8 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 
 | # | Etapa | Entrega | Herramientas (open source) | Estado |
 |---|---|---|---|---|
-| 0 | Decisión y relevamiento | ADR-0013, [relevamiento](relevamiento.md), [política de severidades](politica-de-severidades.md) | — | En curso |
-| 1 | Base del repo | Estructura, JSON Schema de `.twa-standards.yml`, versionado semver con tag `v1`, CI propio, `examples/sample-service` | release-please, actionlint, zizmor, check-jsonschema, act | — |
+| 0 | Decisión y relevamiento | ADR-0013, [relevamiento](relevamiento.md), [política de severidades](politica-de-severidades.md) | — | Hecha |
+| 1 | Base del repo | Estructura, JSON Schema de `.twa-standards.yml`, versionado semver con tags móviles ([versionado](versionado.md)), CI propio, `examples/sample-service` | release-please, actionlint, zizmor, check-jsonschema, shellcheck | Hecha |
 | 2 | Build, estilo y tests | `build-test.yml` equivalente al `ci.yml` actual, composite action del `settings.xml`, cobertura | Maven Enforcer, Spotless, Surefire/Failsafe, JaCoCo, action-junit-report; PIT nocturno opcional | — |
 | 3 | Arquitectura | `architecture.yml`: corre el perfil `architecture-rules` y exige la versión mínima de la librería. No define reglas | twa-layered-rules / twa-hexagonal-rules, Maven Enforcer | — |
 | 4 | Seguridad | Secretos, SAST, vulnerabilidades, SBOM, licencias | Gitleaks (CLI), Semgrep CE, SpotBugs + FindSecBugs, Trivy, OSV-Scanner, CycloneDX | — |
@@ -23,7 +23,7 @@ twa-engineering-standards/
 ├── .github/workflows/        # reutilizables (on: workflow_call): java-service.yml, java-library.yml,
 │                             # build-test.yml, architecture.yml, openapi.yml, security.yml, docker.yml, report.yml
 ├── actions/                  # composite actions: maven-settings, setup-java, read-config
-├── config/                   # configuración de cada herramienta: spectral, hadolint, trivy, semgrep, gitleaks, conftest
+├── config/                   # controls.yml (catálogo) y la configuración de cada herramienta: spectral, hadolint, trivy…
 ├── renovate/default.json     # preset compartido
 ├── schema/twa-standards.schema.json
 ├── examples/sample-service/  # servicio mínimo para probar los workflows

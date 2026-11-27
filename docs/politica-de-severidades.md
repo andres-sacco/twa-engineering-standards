@@ -28,7 +28,7 @@ Cada control tiene un id (`BLD-01`, `SEC-03`…) que aparece en el mensaje cuand
 
 ## Catálogo inicial de controles
 
-Los ids son estables: un control que se elimina no reusa su id. La etapa en que se implementa está en el
+Los ids son estables: un control que se elimina no reusa su id. La fuente de verdad es [config/controls.yml](../config/controls.yml); `make lint` verifica que esta tabla coincida. La etapa en que se implementa está en el
 [plan](plan.md).
 
 | Id | Control | Herramienta | Severidad inicial | Etapa |

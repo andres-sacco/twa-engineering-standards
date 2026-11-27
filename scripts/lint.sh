@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# make lint: valida los workflows, el schema de .twa-standards.yml y el catálogo de controles. Corre igual en local y
+# en CI. Necesita Docker (actionlint), yq (mikefarah, viene en los runners de GitHub) y uvx o pipx (zizmor,
+# check-jsonschema, shellcheck), con las versiones fijadas acá.
+set -euo pipefail
+
+ACTIONLINT_VERSION="1.7.12"
+ZIZMOR_VERSION="1.33.1"
+CHECK_JSONSCHEMA_VERSION="0.39.0"
+SHELLCHECK_VERSION="0.11.0.1"
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+SCHEMA="schema/twa-standards.schema.json"
+CATALOG="config/controls.yml"
+POLICY="docs/politica-de-severidades.md"
+ID_PATTERN='^(BLD|TST|ARC|SEC|API|DKR|DEP|WFL)-[0-9]{2}$'
+
+errors=0
+section() { printf '==> %s\n' "$1"; }
+ok() { printf '  ✔ %s\n' "$1"; }
+fail() { printf '  ✘ %s\n' "$1"; errors=$((errors + 1)); }
+
+# Corre una herramienta de Python con la versión fijada, con uvx o pipx
+pytool() {
+  local spec="$1"
+  shift
+  if command -v uvx >/dev/null 2>&1; then
+    uvx --quiet --from "$spec" "$@"
+  elif command -v pipx >/dev/null 2>&1; then
+    pipx run --spec "$spec" "$@"
+  else
+    echo "Hace falta uvx o pipx para correr $spec" >&2
+    return 127
+  fi
+}
+
+section "Workflows: actionlint ${ACTIONLINT_VERSION}"
+if docker run --rm -v "$ROOT:/repo" -w /repo "rhysd/actionlint:${ACTIONLINT_VERSION}" -color; then
+  ok "sin problemas"
+else
+  fail "actionlint encontró problemas"
+fi
+
+section "Workflows: zizmor ${ZIZMOR_VERSION} (WFL-01)"
+if pytool "zizmor==${ZIZMOR_VERSION}" zizmor --offline --no-progress .github/workflows; then
+  ok "sin problemas"
+else
+  fail "zizmor encontró problemas"
+fi
+
+section "Schema de .twa-standards.yml"
+jsonschema() { pytool "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}" check-jsonschema "$@"; }
+if jsonschema --check-metaschema "$SCHEMA" >/dev/null; then
+  ok "el schema es válido (JSON Schema 2020-12)"
+else
+  fail "el schema no cumple el metaschema"
+fi
+mapfile -t valid_files < <(find schema/tests/valid examples -name '*.yml' -path '*/valid/*' -o -name '.twa-standards.yml' | sort)
+for f in "${valid_files[@]}"; do
+  if jsonschema --schemafile "$SCHEMA" "$f" >/dev/null; then ok "válido: $f"; else fail "debería ser válido: $f"; fi
+done
+for f in schema/tests/invalid/*.yml; do
+  if jsonschema --schemafile "$SCHEMA" "$f" >/dev/null 2>&1; then fail "debería ser inválido: $f"; else ok "inválido: $f"; fi
+done
+
+section "Catálogo de controles (${CATALOG})"
+mapfile -t ids < <(yq '.controls | keys | .[]' "$CATALOG")
+for id in "${ids[@]}"; do
+  [[ "$id" =~ $ID_PATTERN ]] || fail "$id: no cumple ${ID_PATTERN}"
+  severity="$(yq ".controls.\"$id\".severity" "$CATALOG")"
+  [[ "$severity" =~ ^(off|warn|block)$ ]] || fail "$id: severity '$severity' no es off, warn ni block"
+  for field in name tool stage appliesTo; do
+    [[ "$(yq ".controls.\"$id\" | has(\"$field\")" "$CATALOG")" == "true" ]] || fail "$id: falta '$field'"
+  done
+  if yq ".controls.\"$id\".appliesTo[]" "$CATALOG" | grep -qvE '^(service|library)$'; then
+    fail "$id: appliesTo solo admite service y library"
+  fi
+done
+ok "${#ids[@]} controles"
+
+section "Política de severidades contra el catálogo"
+# Filas de la tabla: | `ID` | Control | Herramienta | Severidad inicial | Etapa |. Los backticks son literales
+# shellcheck disable=SC2016
+mapfile -t policy_rows < <(grep -E '^\| `[A-Z]{3}-[0-9]{2}` \|' "$POLICY")
+declare -A policy_severity=()
+for row in "${policy_rows[@]}"; do
+  # shellcheck disable=SC2016
+  id="$(sed -E 's/^\| `([A-Z]{3}-[0-9]{2})`.*/\1/' <<<"$row")"
+  severity="$(awk -F'|' '{print $5}' <<<"$row" | grep -oE 'off|warn|block' | head -1)"
+  policy_severity["$id"]="$severity"
+done
+for id in "${ids[@]}"; do
+  if [[ -z "${policy_severity[$id]:-}" ]]; then
+    fail "$id está en el catálogo y no en ${POLICY}"
+  elif [[ "${policy_severity[$id]}" != "$(yq ".controls.\"$id\".severity" "$CATALOG")" ]]; then
+    fail "$id: la severidad de ${POLICY} no coincide con el catálogo"
+  fi
+done
+for id in "${!policy_severity[@]}"; do
+  printf '%s\n' "${ids[@]}" | grep -qx "$id" || fail "$id está en ${POLICY} y no en el catálogo"
+done
+ok "${#policy_rows[@]} filas revisadas"
+
+section "Ids usados en las configuraciones"
+for f in "${valid_files[@]}"; do
+  while read -r id; do
+    [[ -z "$id" ]] && continue
+    printf '%s\n' "${ids[@]}" | grep -qx "$id" || fail "$f: el control $id no está en el catálogo"
+  done < <(yq '.controls // {} | keys | .[]' "$f")
+done
+ok "${#valid_files[@]} archivos revisados"
+
+section "Scripts"
+for f in scripts/*.sh; do
+  bash -n "$f" || fail "sintaxis: $f"
+done
+if pytool "shellcheck-py==${SHELLCHECK_VERSION}" shellcheck scripts/*.sh; then
+  ok "shellcheck"
+else
+  fail "shellcheck encontró problemas"
+fi
+
+if ((errors > 0)); then
+  printf '✘ %d problemas\n' "$errors"
+  exit 1
+fi
+printf '✔ Todo en orden\n'

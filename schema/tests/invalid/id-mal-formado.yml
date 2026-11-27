@@ -1,0 +1,6 @@
+# Los ids son PREFIJO-NN
+version: 1
+type: service
+controls:
+  SEC-1:
+    severity: warn
