@@ -50,9 +50,6 @@ jobs:
     permissions:
       contents: read
     uses: andres-sacco/twa-engineering-standards/.github/workflows/java-ci.yml@<sha> # v0.1.0
-    with:
-      artifact-name: search-service
-      artifact-path: search-service/target/search-service-*-exec.jar
     secrets:
       PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
 ```
@@ -81,7 +78,7 @@ jobs:
 | `working-directory` | `.` | Directorio del pom raíz |
 | `config-file` | `.twa-standards.yml` | Relativo a `working-directory` |
 | `maven-args` | — | Argumentos extra para Maven en BLD-02 y BLD-04 (ej. `-pl search-service -am`) |
-| `artifact-name` / `artifact-path` | — | Sube el jar como artifact (glob relativo a `working-directory`) |
+| `artifact-name` / `artifact-path` | — | Sube el jar como artifact (glob relativo a `working-directory`), por un día. Solo si algo lo baja: un jar de servicio pesa ~60 MB y la cuota de artifacts es de la cuenta ([reportes](reportes.md#artifacts-y-cuota)) |
 | `docker-context` / `dockerfile` | `.` / `Dockerfile` | Relativos a `working-directory` |
 | `standards-ref` | la versión del release | **No se toca.** De esa versión de este repo salen los scripts y el catálogo. |
 

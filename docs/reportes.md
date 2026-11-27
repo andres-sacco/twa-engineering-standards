@@ -77,6 +77,28 @@ Lo único que aportaría es ver una vulnerabilidad nueva en un repo que no cambi
 Lo que se pierde: el tablero muestra el estado al último push, no el de hoy, y una vulnerabilidad sin versión
 corregida no aparece hasta que alguien toca el repo (tampoco cuenta para SEC-03 ni DKR-03).
 
+## Artifacts y cuota
+
+Los artifacts de los repos privados comparten **una cuota de almacenamiento de la cuenta** (500 MB en el plan
+gratuito), que GitHub recalcula cada 6 a 12 horas. Si se llena, ningún repo puede subir artifacts hasta que venzan o
+se borren los viejos. Por eso:
+
+| Artifact | Días | Peso aproximado |
+|---|---|---|
+| `twa-results-<job>` (intermedios) | 1 | < 10 KB |
+| `twa-results` (lo lee el tablero) | 30 | < 10 KB |
+| `sbom` | 30 | ~200 KB |
+| `test-reports` (solo si fallan los tests), `coverage-report`, `security-reports*`, `openapi`, `docker-reports` | 3 | 1 a 10 MB |
+| el jar (`artifact-name`, opcional) | 1 | ~60 MB por servicio |
+
+Cada subida tiene `continue-on-error`: sin cuota, el step queda en rojo pero el job sigue y el PR no se bloquea por
+eso. Lo que se pierde es lo que no se subió: si falta un `twa-results-<job>`, sus controles aparecen como "— sin
+resultado" en el resumen. Las líneas de base de TST-02 y API-03 usan la cache de Actions, que tiene su propio límite
+por repo.
+
+Si la cuota se llena: borrar los artifacts viejos (los jars primero) en Actions de cada repo privado y esperar el
+recálculo.
+
 ## SARIF
 
 Cada herramienta deja su SARIF en los artifacts (`security-reports`, `openapi`, `docker-reports`). No se suben a Code

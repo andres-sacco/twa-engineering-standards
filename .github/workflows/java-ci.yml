@@ -151,12 +151,13 @@ jobs:
       # El resultado de cada control de este job, para el resumen del job twa-standards
       - name: Upload results
         if: ${{ !cancelled() }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twa-results-style
           path: ${{ runner.temp }}/twa-results
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
 
   build:
     name: Build and test
@@ -253,6 +254,7 @@ jobs:
         run: '"$STANDARDS_DIR/scripts/check-architecture.sh" "$SEVERITY" "$VERIFY_RESULT"'
       - name: Upload test reports
         if: steps.verify.outputs.result == 'fail'
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-reports
@@ -260,7 +262,7 @@ jobs:
             ${{ inputs.working-directory }}/**/target/surefire-reports
             ${{ inputs.working-directory }}/**/target/failsafe-reports
             ${{ inputs.working-directory }}/**/target/karate-reports
-          retention-days: 7
+          retention-days: 3
       - name: Test annotations
         if: ${{ !cancelled() && (steps.verify.outputs.result == 'ok' || steps.verify.outputs.result == 'fail') }}
         uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
@@ -304,20 +306,22 @@ jobs:
           key: twa-coverage-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
       - name: Upload coverage report
         if: steps.verify.outputs.result == 'ok'
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-report
           path: ${{ inputs.working-directory }}/**/target/site/jacoco
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
       - name: Upload jar
         if: steps.verify.outputs.result == 'ok' && inputs.artifact-name != ''
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.artifact-name }}
           path: ${{ inputs.working-directory }}/${{ inputs.artifact-path }}
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
 
       # SpotBugs analiza el bytecode: corre acá, sobre lo que ya compiló verify. Semgrep (la otra mitad de SEC-02) corre
       # en el job security. Va al final para que un hallazgo en block no saltee los pasos de cobertura
@@ -331,12 +335,13 @@ jobs:
           "$STANDARDS_DIR/scripts/check-spotbugs.sh" "$SEVERITY" $MAVEN_ARGS
       - name: Upload SpotBugs reports
         if: ${{ !cancelled() && steps.verify.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['SEC-02'] != 'off' }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: security-reports-spotbugs
           path: ${{ runner.temp }}/spotbugs-reports
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
 
       # La spec la exporta el OpenApiIT de cada servicio dentro de verify (target/openapi.json). API-02 y API-03 la
       # leen de ahí; API-03 compara contra la del último push a la rama principal, que queda en la cache de Actions
@@ -387,21 +392,23 @@ jobs:
           key: twa-openapi-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
       - name: Upload OpenAPI reports
         if: ${{ !cancelled() && steps.openapi.outputs.result == 'ok' }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: openapi
           path: ${{ runner.temp }}/openapi-reports
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
       # El resultado de cada control de este job, para el resumen del job twa-standards
       - name: Upload results
         if: ${{ !cancelled() }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twa-results-build
           path: ${{ runner.temp }}/twa-results
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
 
   security:
     name: Security
@@ -511,6 +518,7 @@ jobs:
       # consulta cuando sale una vulnerabilidad nueva
       - name: Upload security reports
         if: ${{ !cancelled() }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: security-reports
@@ -518,9 +526,10 @@ jobs:
             ${{ runner.temp }}/security-reports
             !${{ runner.temp }}/security-reports/bom.json
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
       - name: Upload SBOM
         if: ${{ !cancelled() && steps.sbom.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['SEC-04'] != 'off' }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sbom
@@ -530,12 +539,13 @@ jobs:
       # El resultado de cada control de este job, para el resumen del job twa-standards
       - name: Upload results
         if: ${{ !cancelled() }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twa-results-security
           path: ${{ runner.temp }}/twa-results
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
 
   image:
     name: Docker image
@@ -642,21 +652,23 @@ jobs:
         run: '"$STANDARDS_DIR/scripts/check-docker-policies.sh" "$SEVERITY" "$PARAMS" "$DOCKERFILE"'
       - name: Upload Docker reports
         if: ${{ !cancelled() }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: docker-reports
           path: ${{ runner.temp }}/docker-reports
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
       # El resultado de cada control de este job, para el resumen del job twa-standards
       - name: Upload results
         if: ${{ !cancelled() }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twa-results-image
           path: ${{ runner.temp }}/twa-results
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
 
   repository:
     name: Repository
@@ -696,12 +708,13 @@ jobs:
       # El resultado de cada control de este job, para el resumen del job twa-standards
       - name: Upload results
         if: ${{ !cancelled() }}
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twa-results-repository
           path: ${{ runner.temp }}/twa-results
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
 
   twa-standards:
     name: twa-standards
@@ -738,6 +751,7 @@ jobs:
         run: '"$STANDARDS_DIR/scripts/summary.sh" "$RUNNER_TEMP/twa-results" "$SEVERITIES" "$RUNNER_TEMP/twa-results.json"'
       - name: Upload twa-results
         if: needs.config.result == 'success'
+        continue-on-error: true # sin artifact el job sigue: la cuota de la cuenta no bloquea un PR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: twa-results

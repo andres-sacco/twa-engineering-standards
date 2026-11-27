@@ -21,7 +21,7 @@ Gitleaks y Trivy corren con Docker, fijados por versión y digest (`scripts/lib.
 * El resumen de cada job tiene una fila por control; cada hallazgo es una anotación en el PR (como máximo 20 por
   control).
 * Artifact `security-reports`: el JSON y el SARIF de cada herramienta (Gitleaks con los secretos ocultos).
-  `security-reports-spotbugs`: un SARIF por módulo. Se guardan 7 días.
+  `security-reports-spotbugs`: un SARIF por módulo. Se guardan 3 días.
 * Artifact `sbom` (`bom.json`, CycloneDX): 30 días. Es lo que se consulta cuando sale una vulnerabilidad nueva.
 * El SARIF no se sube a Code Scanning: los servicios son privados y necesitaría GitHub Advanced Security (ver
   [reportes](reportes.md#sarif)).
