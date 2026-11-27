@@ -2,20 +2,18 @@
 # TST-01 y TST-02: cobertura de líneas de todos los módulos (suma de los target/site/jacoco/jacoco.csv que deja
 # `jacoco:report`, con los tests unitarios y de integración juntos).
 # Uso: coverage.sh SEVERIDAD_TST01 SEVERIDAD_TST02 PARAMS_JSON BASELINE_JSON SALIDA_JSON (en el directorio del pom)
-#   PARAMS_JSON: los params del .twa-standards.yml ({"TST-01": {"minLineCoverage": 60}, "TST-02": {"maxDrop": 0.5}})
+#   PARAMS_JSON: los params que deja read-config.sh, con los defaults del catálogo
+#   ({"TST-01": {"minLineCoverage": 60}, "TST-02": {"maxDrop": 0.5}})
 #   BASELINE_JSON: la cobertura de la rama principal (puede no existir); SALIDA_JSON: la de este build
 set -euo pipefail
 # shellcheck source=scripts/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-DEFAULT_MIN_LINE_COVERAGE=60
-DEFAULT_MAX_DROP=0.5
-
 sev_min="$1" sev_drop="$2" params="$3" baseline="$4" output="$5"
 [[ "$sev_min" == "off" && "$sev_drop" == "off" ]] && exit 0
 
-min="$(jq -r --argjson d "$DEFAULT_MIN_LINE_COVERAGE" '."TST-01".minLineCoverage // $d' <<<"$params")"
-max_drop="$(jq -r --argjson d "$DEFAULT_MAX_DROP" '."TST-02".maxDrop // $d' <<<"$params")"
+min="$(jq -er '."TST-01".minLineCoverage' <<<"$params")" || { echo "::error::Falta TST-01.minLineCoverage en los params"; exit 1; }
+max_drop="$(jq -er '."TST-02".maxDrop' <<<"$params")" || { echo "::error::Falta TST-02.maxDrop en los params"; exit 1; }
 
 mapfile -t reports < <(find . -path '*/target/site/jacoco/jacoco.csv' -not -path './.git/*' | sort)
 if ((${#reports[@]} == 0)); then
@@ -32,7 +30,7 @@ modules='[]'
 for r in "${reports[@]}"; do
   read -r m c < <(awk -F, 'FNR > 1 { m += $8; c += $9 } END { print m + 0, c + 0 }' "$r")
   module="$(sed -E 's#^\./##; s#/?target/site/jacoco/jacoco.csv$##' <<<"$r")"
-  modules="$(jq -c --arg n "${module:-.}" --argjson m "$m" --argjson c "$c" '. + [{module: $n, missed: $m, covered: $c}]' <<<"$modules")"
+  modules="$(jq -c --arg n "${module:-$(basename "$PWD")}" --argjson m "$m" --argjson c "$c" '. + [{module: $n, missed: $m, covered: $c}]' <<<"$modules")"
 done
 jq -n --argjson pct "$pct" --argjson m "$missed" --argjson c "$covered" --argjson mods "$modules" \
   '{line: $pct, missed: $m, covered: $c, modules: $mods}' >"$output"

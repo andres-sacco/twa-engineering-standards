@@ -4,8 +4,9 @@
 #
 # severity: la severidad por defecto (off | warn | block). appliesTo: los tipos de repo donde corre (service, library).
 # stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa mayor que implementedStage se
-# pueden configurar pero todavía no corren.
-implementedStage: 2
+# pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
+# se combinan encima.
+implementedStage: 3
 controls:
   BLD-01:
     name: Formato del código
@@ -37,24 +38,34 @@ controls:
     severity: warn
     stage: 2
     appliesTo: [service, library]
+    params:
+      minLineCoverage: 60 # provisorio: se ajusta con lo que midan los repos en warn
   TST-02:
     name: La cobertura no baja respecto de main
     tool: JaCoCo
     severity: warn
     stage: 2
     appliesTo: [service, library]
+    params:
+      maxDrop: 0.5 # puntos de cobertura que puede bajar un PR respecto de la rama principal
   ARC-01:
-    name: Reglas de arquitectura de twa-layered-rules / twa-hexagonal-rules
+    name: Corren y pasan las reglas de arquitectura de twa-layered-rules / twa-hexagonal-rules
     tool: ArchUnit (librería existente)
     severity: block
     stage: 3
     appliesTo: [service]
   ARC-02:
     name: Versión mínima de la librería de reglas
-    tool: maven-enforcer-plugin
+    tool: Maven (pom efectivo)
     severity: warn
     stage: 3
     appliesTo: [service]
+    params:
+      # La versión mínima de cada librería de reglas. Se sube cuando una versión nueva de la librería vuelve obligatoria
+      # una regla (una major de la librería, ver su docs/architecture-rules.md § 8)
+      minVersions:
+        twa-layered-rules: 0.1.0
+        twa-hexagonal-rules: 0.1.0
   SEC-01:
     name: Secretos en el código y en el historial del PR
     tool: Gitleaks

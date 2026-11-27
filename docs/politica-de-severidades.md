@@ -39,8 +39,8 @@ Los ids son estables: un control que se elimina no reusa su id. La fuente de ver
 | `BLD-04` | Convergencia de dependencias y dependencias prohibidas | maven-enforcer-plugin | warn | 2 |
 | `TST-01` | Cobertura de líneas mínima (umbral a definir con lo que mida JaCoCo en `warn`) | JaCoCo | warn | 2 |
 | `TST-02` | La cobertura no baja respecto de `main` | JaCoCo | warn | 2 |
-| `ARC-01` | Reglas de arquitectura de `twa-layered-rules` / `twa-hexagonal-rules` | ArchUnit (librería existente) | block (ya bloquea) | 3 |
-| `ARC-02` | Versión mínima de la librería de reglas | maven-enforcer-plugin | warn | 3 |
+| `ARC-01` | Corren y pasan las reglas de arquitectura de `twa-layered-rules` / `twa-hexagonal-rules` | ArchUnit (librería existente) | block (ya bloquea) | 3 |
+| `ARC-02` | Versión mínima de la librería de reglas | Maven (pom efectivo) | warn | 3 |
 | `SEC-01` | Secretos en el código y en el historial del PR | Gitleaks | **block** | 4 |
 | `SEC-02` | Análisis estático de seguridad | Semgrep CE, SpotBugs + FindSecBugs | warn | 4 |
 | `SEC-03` | Vulnerabilidades CRITICAL/HIGH con versión corregida en dependencias | Trivy (fs), OSV-Scanner | warn | 4 |

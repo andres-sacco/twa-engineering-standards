@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Lee el .twa-standards.yml del repo, lo valida contra el schema y lo combina con los defaults de config/controls.yml.
 # Uso: read-config.sh [archivo] (por defecto .twa-standards.yml). Salidas del step:
-#   type        service | library
-#   java        versión de Java (default 25)
+#   type          service | library
+#   architecture  layered | hexagonal (default layered; solo cuenta en servicios)
+#   java          versión de Java (default 25)
 #   severities  JSON {"BLD-01": "block", …} con todos los controles; off si no aplican al tipo de repo
-#   params      JSON {"TST-01": {"minLineCoverage": 60}, …}
+#   params      JSON {"TST-01": {"minLineCoverage": 60}, …}: los params del catálogo con los del repo encima
 # Falla si el archivo no cumple el schema o si baja la severidad de un control sin `reason`.
 set -euo pipefail
 # shellcheck source=scripts/lib.sh
@@ -30,12 +31,17 @@ rank() {
 type="$(yq '.type' "$CONFIG")"
 implemented_stage="$(yq '.implementedStage' "$CATALOG")"
 java="$(yq ".java // \"${DEFAULT_JAVA}\"" "$CONFIG")"
+architecture="$(yq '.architecture // "layered"' "$CONFIG")"
 severities='{}'
 errors=0
 
 summary "### Configuración de twa-engineering-standards (\`${CONFIG}\`)"
 summary ""
-summary "Tipo \`${type}\`, Java ${java}."
+if [[ "$type" == "service" ]]; then
+  summary "Tipo \`${type}\` (arquitectura \`${architecture}\`), Java ${java}."
+else
+  summary "Tipo \`${type}\`, Java ${java}."
+fi
 summary ""
 summary "| Control | Default | Este repo | Razón |"
 summary "|---|---|---|---|"
@@ -76,8 +82,12 @@ done < <(yq '.controls // {} | keys | .[]' "$CONFIG")
 
 ((errors == 0)) || exit 1
 
-params="$(yq -o=json -I=0 '.controls // {} | map_values(.params // {})' "$CONFIG")"
+# Los params del catálogo, con los del repo combinados encima (un mapa se combina clave a clave)
+defaults="$(yq -o=json -I=0 '.controls | map_values(.params // {})' "$CATALOG")"
+overrides="$(yq -o=json -I=0 '.controls // {} | map_values(.params // {})' "$CONFIG")"
+params="$(jq -cn --argjson d "$defaults" --argjson o "$overrides" '$d * $o')"
 set_output type "$type"
+set_output architecture "$architecture"
 set_output java "$java"
 set_output severities "$severities"
 set_output params "$params"

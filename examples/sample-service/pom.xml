@@ -6,8 +6,8 @@
 
 	<!--
 		Servicio mínimo para probar los workflows de este repo. Copia la forma de los servicios TWA (Spring Boot 4.1.2,
-		Java 25, Spotless, tests en src/test y src/it, enforcer, Dockerfile multi-stage) sin depender de GitHub Packages.
-		No es una plantilla para servicios nuevos.
+		Java 25, Spotless, tests en src/test y src/it, enforcer, reglas de twa-layered-rules en el perfil
+		architecture-rules, Dockerfile multi-stage). No es una plantilla para servicios nuevos.
 	-->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -30,6 +30,7 @@
 		<maven-enforcer-plugin.version>3.7.0</maven-enforcer-plugin.version>
 		<spotless-maven-plugin.version>3.11.0</spotless-maven-plugin.version>
 		<palantir-java-format.version>2.103.0</palantir-java-format.version>
+		<twa-layered-rules.version>0.1.0</twa-layered-rules.version>
 	</properties>
 
 	<dependencies>
@@ -159,4 +160,36 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!--
+			Como en los servicios: las reglas de arquitectura (twa-layered-rules, en GitHub Packages, con el token del
+			settings.xml) corren con los tests. La imagen no corre los tests y apaga el perfil con -DskipArchitectureRules.
+		-->
+		<profile>
+			<id>architecture-rules</id>
+			<activation>
+				<property>
+					<name>!skipArchitectureRules</name>
+				</property>
+			</activation>
+			<repositories>
+				<repository>
+					<id>github-twa-layered-rules</id>
+					<url>https://maven.pkg.github.com/andres-sacco/twa-layered-rules</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+			<dependencies>
+				<dependency>
+					<groupId>com.twa</groupId>
+					<artifactId>twa-layered-rules</artifactId>
+					<version>${twa-layered-rules.version}</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 </project>

@@ -15,7 +15,8 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
   ni a composite actions de este repo (ver `docs/plan.md` § Decisiones de la etapa 2). `ci.yml` y `release.yml` son de
   este repo; `ci.yml` corre `java-ci.yml` sobre el servicio de prueba.
 - `scripts/`: `lib.sh` (`report`, versiones de herramientas), `read-config.sh`, `run-control.sh`, un script por control
-  que no es un comando de Maven (`check-build-versions.sh`, `coverage.sh`, `check-workflows.sh`), `maven-settings.sh`
+  que no es un comando de Maven (`check-build-versions.sh`, `check-architecture.sh`, `check-architecture-version.sh`,
+  `coverage.sh`, `check-workflows.sh`), `maven-settings.sh`
   y `lint.sh`.
 - `examples/sample-service/`: servicio mínimo con la forma de los servicios TWA, para probar los workflows. No es una
   plantilla.

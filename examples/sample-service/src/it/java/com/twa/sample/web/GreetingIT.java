@@ -1,4 +1,4 @@
-package com.twa.sample.controller;
+package com.twa.sample.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
