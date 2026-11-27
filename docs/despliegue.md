@@ -63,11 +63,10 @@ que no existe). El piloto fija el workflow **y** `standards-ref` al mismo commit
 Con el primer release, el `uses:` pasa al SHA del tag `v0.1.0` (comentario `# v0.1.0`) y se saca `standards-ref`.
 Desde ahí lo actualiza Renovate.
 
-El workflow `Release` falla hoy en `release-please` con `Error adding to tree`: el `GITHUB_TOKEN` no puede escribir
-aunque el job pida `contents: write`, porque la configuración del repo lo limita a lectura. Se arregla en
-**Settings → Actions → General → Workflow permissions**: "Read and write permissions" y "Allow GitHub Actions to
-create and approve pull requests" (release-please abre el PR de release). Después, el próximo push a `main` abre el
-PR de `v0.1.0`.
+El workflow `Release` fallaba en `release-please` con `Error adding to tree`: el PR de release cambia
+`.github/workflows/java-ci.yml` y el `GITHUB_TOKEN` no puede tocar workflows. Ahora usa el secret
+`RELEASE_PLEASE_TOKEN` ([versionado](versionado.md#el-token-de-release-please)); con ese secret cargado, el próximo
+push a `main` (o volver a correr `Release`) abre el PR de `v0.1.0`.
 
 ## El piloto: catalog
 
