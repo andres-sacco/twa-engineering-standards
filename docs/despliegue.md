@@ -22,7 +22,8 @@ Un repo empieza cuando el anterior tuvo al menos un push a `main` con el workflo
 En un PR del repo:
 
 1. `.github/workflows/ci.yml` que llama a `java-ci.yml` ([uso](uso.md#2-githubworkflowsciyml)), con
-   `artifact-name`/`artifact-path` si sube el jar y `maven-args` si es multi-módulo.
+   `maven-args` si es multi-módulo. Sin `artifact-name`: el jar no lo baja nadie y llena la cuota de artifacts
+   ([reportes](reportes.md#artifacts-y-cuota)).
 2. `.twa-standards.yml` con lo que cambia respecto de los defaults. Con la cobertura medida, `TST-01.minLineCoverage`
    unos puntos abajo de lo que mide (así avisa si baja), nunca abajo del default.
 3. `renovate.json` con el preset y sin `.github/dependabot.yml` ([dependencias](dependencias.md)).
