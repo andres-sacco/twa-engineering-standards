@@ -71,7 +71,8 @@ jobs:
   [openapi](openapi.md)).
 * `.github/maven-settings.sh` se borra: el `settings.xml` lo arma `scripts/maven-settings.sh` de este repo.
 * El check que se exige en la protección de `main` es **`ci / twa-standards`**: resume a todos los jobs y falla solo
-  si falló un control en `block`.
+  si falló un control en `block`. El resto de la configuración del repo (secrets, alertas, etiqueta
+  `api-breaking-change`) está en [despliegue](despliegue.md#qué-hace-falta-en-cada-repo).
 
 ### Inputs
 
@@ -82,7 +83,7 @@ jobs:
 | `maven-args` | — | Argumentos extra para Maven en BLD-02 y BLD-04 (ej. `-pl search-service -am`) |
 | `artifact-name` / `artifact-path` | — | Sube el jar como artifact (glob relativo a `working-directory`) |
 | `docker-context` / `dockerfile` | `.` / `Dockerfile` | Relativos a `working-directory` |
-| `standards-ref` | la versión del release | **No se toca.** De esa versión de este repo salen los scripts y el catálogo |
+| `standards-ref` | la versión del release | **No se toca.** De esa versión de este repo salen los scripts y el catálogo. Única excepción: antes del primer release se fija al mismo commit que el `uses:` ([despliegue](despliegue.md#antes-del-primer-release)) |
 
 Secret: `PACKAGES_TOKEN`, token clásico con `read:packages` para las librerías TWA de GitHub Packages. Sin él, el
 build solo baja dependencias públicas (sirve para un repo sin librerías TWA).

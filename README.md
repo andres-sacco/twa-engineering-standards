@@ -12,8 +12,8 @@ La decisión está en
 de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 [twa-layered-rules](https://github.com/andres-sacco/twa-layered-rules); este repo las ejecuta y reporta.
 
-**Estado:** etapas 0 a 8 terminadas ([plan](docs/plan.md)). Ningún repo lo usa todavía: el piloto con catalog es la
-etapa 9.
+**Estado:** etapas 0 a 8 terminadas; la 9, el despliegue, empieza con catalog como piloto ([plan](docs/plan.md),
+[despliegue](docs/despliegue.md)). Todavía no hay release: el piloto se fija a un commit de `main`.
 
 ## Qué revisa
 
@@ -117,6 +117,7 @@ make report         # tablero con el último resultado de cada repo (TWA_REPORT_
 |---|---|
 | **Adoptarlo** | |
 | [docs/uso.md](docs/uso.md) | Cómo un repo adopta `java-ci.yml`: su `ci.yml`, inputs, qué corre y qué cambia respecto del CI actual |
+| [docs/despliegue.md](docs/despliegue.md) | El orden de los repos, qué configurar en cada uno (branch protection, secrets, alertas) y el resultado del piloto con catalog |
 | **Qué revisa cada área** | |
 | [docs/seguridad.md](docs/seguridad.md) | Secretos, SAST, SBOM, vulnerabilidades y licencias: herramientas, reportes, cómo suprimir un hallazgo |
 | [docs/openapi.md](docs/openapi.md) | El contrato OpenAPI: cómo se exporta la spec, las reglas de Spectral, los cambios incompatibles y cómo aprobarlos |
