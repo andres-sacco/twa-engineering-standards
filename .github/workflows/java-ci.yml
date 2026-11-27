@@ -1,0 +1,368 @@
+name: TWA Java CI
+
+# Workflow reutilizable para servicios y librerías Java de TWA. Lee el .twa-standards.yml del repo (tipo, versión de
+# Java y severidad de cada control) y corre los controles que le tocan. Cada control falla el check solo si su
+# severidad es block (docs/politica-de-severidades.md). Uso y migración: docs/uso.md.
+#
+# Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, TST-01, TST-02) | image (DKR-01) | workflows (WFL-01)
+# → twa-standards. El
+# último resume a los demás: es el check que se exige en la protección de la rama.
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: Directorio del pom raíz, relativo a la raíz del repo
+        type: string
+        default: '.'
+      config-file:
+        description: Configuración de los controles, relativa a working-directory
+        type: string
+        default: .twa-standards.yml
+      maven-args:
+        description: Argumentos extra para Maven (ej. -pl search-service -am)
+        type: string
+        default: ''
+      artifact-name:
+        description: Si no está vacío, sube el jar con este nombre de artifact
+        type: string
+        default: ''
+      artifact-path:
+        description: Glob del jar a subir, relativo a working-directory (ej. search-service/target/*-exec.jar)
+        type: string
+        default: ''
+      docker-context:
+        description: Contexto de la imagen, relativo a working-directory
+        type: string
+        default: '.'
+      dockerfile:
+        description: Dockerfile, relativo a working-directory
+        type: string
+        default: Dockerfile
+      standards-ref:
+        description: Versión de twa-engineering-standards de la que salen los scripts y el catálogo. No cambiarla
+        type: string
+        default: v0.0.0 # x-release-please-version
+    secrets:
+      PACKAGES_TOKEN:
+        description: Token clásico con read:packages para las librerías TWA de GitHub Packages
+        required: false
+
+permissions: {}
+
+env:
+  # Versiones fijadas de los plugins que se agregan por línea de comandos (el pom del repo no los declara)
+  JACOCO_VERSION: 0.8.16
+  ENFORCER_VERSION: 3.7.0
+
+jobs:
+  config:
+    name: Config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      type: ${{ steps.config.outputs.type }}
+      java: ${{ steps.config.outputs.java }}
+      severities: ${{ steps.config.outputs.severities }}
+      params: ${{ steps.config.outputs.params }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: andres-sacco/twa-engineering-standards
+          ref: ${{ inputs.standards-ref }}
+          path: .twa-standards
+          persist-credentials: false
+      # Fuera del workspace: que no entre en el build ni en el contexto de Docker
+      - name: Standards
+        run: |
+          mv .twa-standards "$RUNNER_TEMP/twa-standards"
+          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+      - id: config
+        name: Read .twa-standards.yml
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          CONFIG_FILE: ${{ inputs.config-file }}
+        run: '"$STANDARDS_DIR/scripts/read-config.sh" "$CONFIG_FILE"'
+
+  style:
+    name: Code style
+    needs: config
+    if: fromJSON(needs.config.outputs.severities)['BLD-01'] != 'off'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: andres-sacco/twa-engineering-standards
+          ref: ${{ inputs.standards-ref }}
+          path: .twa-standards
+          persist-credentials: false
+      - name: Standards
+        working-directory: ${{ github.workspace }}
+        run: |
+          mv .twa-standards "$RUNNER_TEMP/twa-standards"
+          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: ${{ needs.config.outputs.java }}
+          cache: maven
+          cache-dependency-path: ${{ inputs.working-directory }}/**/pom.xml
+      - name: Maven settings
+        env:
+          PACKAGES_USER: ${{ github.repository_owner }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+        run: mkdir -p ~/.m2 && "$STANDARDS_DIR/scripts/maven-settings.sh" >~/.m2/settings.xml
+      - name: BLD-01 Spotless
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['BLD-01'] }}
+        run: >-
+          "$STANDARDS_DIR/scripts/run-control.sh" BLD-01 "$SEVERITY"
+          "El código no cumple el formato: corré mvn spotless:apply"
+          -- mvn -B -ntp spotless:check
+
+  build:
+    name: Build and test
+    needs: config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      MAVEN_ARGS: ${{ inputs.maven-args }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: andres-sacco/twa-engineering-standards
+          ref: ${{ inputs.standards-ref }}
+          path: .twa-standards
+          persist-credentials: false
+      - name: Standards
+        working-directory: ${{ github.workspace }}
+        run: |
+          mv .twa-standards "$RUNNER_TEMP/twa-standards"
+          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: ${{ needs.config.outputs.java }}
+          cache: maven
+          cache-dependency-path: ${{ inputs.working-directory }}/**/pom.xml
+      - name: Maven settings
+        env:
+          PACKAGES_USER: ${{ github.repository_owner }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+        run: mkdir -p ~/.m2 && "$STANDARDS_DIR/scripts/maven-settings.sh" >~/.m2/settings.xml
+
+      - name: BLD-03 Java and Maven versions
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['BLD-03'] }}
+          JAVA: ${{ needs.config.outputs.java }}
+        run: '"$STANDARDS_DIR/scripts/check-build-versions.sh" "$SEVERITY" "$JAVA"'
+
+      - name: BLD-04 Dependency convergence
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['BLD-04'] }}
+        run: |
+          # shellcheck disable=SC2086 # MAVEN_ARGS son varios argumentos
+          "$STANDARDS_DIR/scripts/run-control.sh" BLD-04 "$SEVERITY" \
+            "Hay dependencias que no convergen o versiones duplicadas en un pom: ver el log de este step" \
+            -- mvn -B -ntp "org.apache.maven.plugins:maven-enforcer-plugin:${ENFORCER_VERSION}:enforce" \
+            -Denforcer.rules=dependencyConvergence,banDuplicatePomDependencyVersions $MAVEN_ARGS
+
+      # Tests unitarios (Surefire) y de integración (Failsafe), con JaCoCo agregado por línea de comandos. Spotless ya
+      # corrió en el job style
+      - id: verify
+        name: BLD-02 Build and test
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['BLD-02'] }}
+          COVERAGE: ${{ fromJSON(needs.config.outputs.severities)['TST-01'] != 'off' || fromJSON(needs.config.outputs.severities)['TST-02'] != 'off' }}
+        run: |
+          goals=(verify)
+          if [[ "$COVERAGE" == "true" ]]; then
+            goals=("org.jacoco:jacoco-maven-plugin:${JACOCO_VERSION}:prepare-agent" verify
+              "org.jacoco:jacoco-maven-plugin:${JACOCO_VERSION}:report")
+          fi
+          # shellcheck disable=SC2086 # MAVEN_ARGS son varios argumentos
+          "$STANDARDS_DIR/scripts/run-control.sh" BLD-02 "$SEVERITY" \
+            "Falló la compilación o algún test: ver el log de este step y el artifact test-reports" \
+            -- mvn -B -ntp "${goals[@]}" -Dspotless.check.skip=true $MAVEN_ARGS
+      - name: Upload test reports
+        if: steps.verify.outputs.result == 'fail'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: |
+            ${{ inputs.working-directory }}/**/target/surefire-reports
+            ${{ inputs.working-directory }}/**/target/failsafe-reports
+            ${{ inputs.working-directory }}/**/target/karate-reports
+          retention-days: 7
+      - name: Test annotations
+        if: ${{ !cancelled() && (steps.verify.outputs.result == 'ok' || steps.verify.outputs.result == 'fail') }}
+        uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
+        with:
+          report_paths: |
+            ${{ inputs.working-directory }}/**/target/surefire-reports/TEST-*.xml
+            ${{ inputs.working-directory }}/**/target/failsafe-reports/TEST-*.xml
+          annotate_only: true
+          detailed_summary: true
+          include_passed: false
+
+      # TST-02 compara contra la cobertura del último push a la rama principal, que queda en la cache de Actions
+      - name: Restore coverage baseline
+        if: steps.verify.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['TST-02'] != 'off'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/coverage-baseline.json
+          key: twa-coverage-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
+          restore-keys: twa-coverage-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-
+      - name: TST-01 TST-02 Coverage
+        if: steps.verify.outputs.result == 'ok'
+        env:
+          SEVERITY_MIN: ${{ fromJSON(needs.config.outputs.severities)['TST-01'] }}
+          SEVERITY_DROP: ${{ fromJSON(needs.config.outputs.severities)['TST-02'] }}
+          PARAMS: ${{ needs.config.outputs.params }}
+        run: >-
+          "$STANDARDS_DIR/scripts/coverage.sh" "$SEVERITY_MIN" "$SEVERITY_DROP" "$PARAMS"
+          "$RUNNER_TEMP/coverage-baseline.json" "$RUNNER_TEMP/coverage.json"
+      - name: Prepare coverage baseline
+        if: >-
+          steps.verify.outputs.result == 'ok' && github.event_name == 'push'
+          && github.ref_name == github.event.repository.default_branch
+        run: cp "$RUNNER_TEMP/coverage.json" "$RUNNER_TEMP/coverage-baseline.json"
+      - name: Save coverage baseline
+        if: >-
+          steps.verify.outputs.result == 'ok' && github.event_name == 'push'
+          && github.ref_name == github.event.repository.default_branch
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/coverage-baseline.json
+          key: twa-coverage-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
+      - name: Upload coverage report
+        if: steps.verify.outputs.result == 'ok'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-report
+          path: ${{ inputs.working-directory }}/**/target/site/jacoco
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload jar
+        if: steps.verify.outputs.result == 'ok' && inputs.artifact-name != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.working-directory }}/${{ inputs.artifact-path }}
+          if-no-files-found: error
+          retention-days: 7
+
+  image:
+    name: Docker image
+    needs: config
+    if: fromJSON(needs.config.outputs.severities)['DKR-01'] != 'off'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: andres-sacco/twa-engineering-standards
+          ref: ${{ inputs.standards-ref }}
+          path: .twa-standards
+          persist-credentials: false
+      - name: Standards
+        run: |
+          mv .twa-standards "$RUNNER_TEMP/twa-standards"
+          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+      # El settings.xml entra al build como secret: no queda en ninguna capa de la imagen
+      - name: Maven settings
+        env:
+          PACKAGES_USER: ${{ github.repository_owner }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+        run: '"$STANDARDS_DIR/scripts/maven-settings.sh" >"$RUNNER_TEMP/settings.xml"'
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      # Solo valida que la imagen se construya; no se publica
+      - id: build
+        name: DKR-01 Build image
+        continue-on-error: ${{ fromJSON(needs.config.outputs.severities)['DKR-01'] != 'block' }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ inputs.working-directory }}/${{ inputs.docker-context }}
+          file: ${{ inputs.working-directory }}/${{ inputs.dockerfile }}
+          push: false
+          secret-files: maven-settings=${{ runner.temp }}/settings.xml
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: DKR-01 Report
+        if: ${{ !cancelled() }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DKR-01'] }}
+          OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          source "$STANDARDS_DIR/scripts/lib.sh"
+          if [[ "$OUTCOME" == "success" ]]; then
+            report DKR-01 "$SEVERITY" ok ""
+          else
+            report DKR-01 "$SEVERITY" fail "La imagen no construye: ver el log del step anterior"
+          fi
+
+  workflows:
+    name: Workflows
+    needs: config
+    if: fromJSON(needs.config.outputs.severities)['WFL-01'] != 'off'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: andres-sacco/twa-engineering-standards
+          ref: ${{ inputs.standards-ref }}
+          path: .twa-standards
+          persist-credentials: false
+      - name: Standards
+        run: |
+          mv .twa-standards "$RUNNER_TEMP/twa-standards"
+          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+      - name: WFL-01 zizmor
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['WFL-01'] }}
+        run: '"$STANDARDS_DIR/scripts/check-workflows.sh" "$SEVERITY"'
+
+  twa-standards:
+    name: twa-standards
+    needs: [config, style, build, image, workflows]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Result
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          failed="$(jq -r 'to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key' <<<"$RESULTS")"
+          if [[ -n "$failed" ]]; then
+            echo "::error::Fallaron: $(tr '\n' ' ' <<<"$failed")(los controles en block; ver el resumen de cada job)"
+            exit 1
+          fi
+          echo "Todos los controles en block pasaron. Los avisos (warn) están en el resumen de cada job."

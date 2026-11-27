@@ -5,12 +5,12 @@
 set -euo pipefail
 
 ACTIONLINT_VERSION="1.7.12"
-ZIZMOR_VERSION="1.33.1"
-CHECK_JSONSCHEMA_VERSION="0.39.0"
 SHELLCHECK_VERSION="0.11.0.1"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+# shellcheck source=scripts/lib.sh
+source scripts/lib.sh
 
 SCHEMA="schema/twa-standards.schema.json"
 CATALOG="config/controls.yml"
@@ -21,20 +21,6 @@ errors=0
 section() { printf '==> %s\n' "$1"; }
 ok() { printf '  ✔ %s\n' "$1"; }
 fail() { printf '  ✘ %s\n' "$1"; errors=$((errors + 1)); }
-
-# Corre una herramienta de Python con la versión fijada, con uvx o pipx
-pytool() {
-  local spec="$1"
-  shift
-  if command -v uvx >/dev/null 2>&1; then
-    uvx --quiet --from "$spec" "$@"
-  elif command -v pipx >/dev/null 2>&1; then
-    pipx run --spec "$spec" "$@"
-  else
-    echo "Hace falta uvx o pipx para correr $spec" >&2
-    return 127
-  fi
-}
 
 section "Workflows: actionlint ${ACTIONLINT_VERSION}"
 if docker run --rm -v "$ROOT:/repo" -w /repo "rhysd/actionlint:${ACTIONLINT_VERSION}" -color; then
@@ -78,6 +64,7 @@ for id in "${ids[@]}"; do
     fail "$id: appliesTo solo admite service y library"
   fi
 done
+[[ "$(yq '.implementedStage' "$CATALOG")" =~ ^[0-9]+$ ]] || fail "implementedStage tiene que ser un número"
 ok "${#ids[@]} controles"
 
 section "Política de severidades contra el catálogo"
@@ -113,6 +100,10 @@ done
 ok "${#valid_files[@]} archivos revisados"
 
 section "Scripts"
+# El default de standards-ref lo actualiza release-please: tiene que tener la marca
+if ! grep -qE 'default: v[0-9]+\.[0-9]+\.[0-9]+ # x-release-please-version' .github/workflows/java-ci.yml; then
+  fail "java-ci.yml: el default de standards-ref perdió la marca x-release-please-version"
+fi
 for f in scripts/*.sh; do
   bash -n "$f" || fail "sintaxis: $f"
 done
