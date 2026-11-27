@@ -13,7 +13,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 5 | OpenAPI | En `java-ci.yml`: la spec que exporta el `OpenApiIT` de cada servicio, Spectral con las reglas `twa-*` y oasdiff contra la rama principal (se aprueba con la etiqueta `api-breaking-change`). Ver [openapi](openapi.md) | springdoc + OpenApiIT, Spectral, oasdiff; Schemathesis más adelante | Hecha |
 | 6 | Docker | En el job `Docker image`: Hadolint, la imagen construida y cargada en el runner, Trivy sobre los paquetes del sistema operativo y los secretos de las capas, y las políticas TWA con Conftest. Ver [docker](docker.md) | Hadolint, Trivy, Conftest. Sin Dockle; Cosign y Syft cuando se publiquen imágenes | Hecha |
 | 7 | Dependencias | Preset central de Renovate (grupos, 3 días de espera, actions e imágenes por digest, automerge de patch con CI verde), Renovate self-hosted en `renovate.yml` y DEP-01. Ver [dependencias](dependencias.md) | Renovate, renovate-config-validator | Hecha |
-| 8 | Reportes | Resumen por PR, SARIF, escaneo nocturno de todos los repos y tablero central | `$GITHUB_STEP_SUMMARY`, SARIF, Dependency-Track o DefectDojo | — |
+| 8 | Reportes | Una tabla con todos los controles en el job `twa-standards` y el artifact `twa-results`; tablero con el último push de cada repo (`make report`). Sin escaneo nocturno. Ver [reportes](reportes.md) | `$GITHUB_STEP_SUMMARY`, artifacts, jq | Hecha |
 | 9 | Despliegue | catalog como piloto; después exchange-rates, proveedores, search, reservations y las librerías. `warn` → `block` según la política | Branch protection, CODEOWNERS | — |
 
 ## Estructura objetivo
@@ -93,6 +93,17 @@ twa-engineering-standards/
 * **La imagen se carga en el runner** (`load: true`) para escanearla; sigue sin publicarse.
 * Un repo exceptúa una política en `params.exceptions` de DKR-04, con la razón.
 
+## Decisiones de la etapa 8
+
+* **Sin escaneo nocturno.** Las vulnerabilidades nuevas en repos que no cambian las cubren las alertas de Dependabot
+  con el PR inmediato de Renovate, y las actualizaciones de la imagen base por digest. El tablero muestra el último
+  push de cada repo.
+* **Cada control deja su resultado en JSON** (`record` en `lib.sh`) y el job `twa-standards` los junta en una tabla y
+  en el artifact `twa-results`: el resumen del PR y la fuente del tablero son lo mismo.
+* **Sin Dependency-Track ni DefectDojo:** piden un servidor. El tablero es un script que lee los artifacts.
+* **Nada se publica en este repo:** es público y el tablero tiene hallazgos de repos privados. Por lo mismo, el SARIF
+  no va a Code Scanning (necesitaría GitHub Advanced Security en los privados).
+
 ## Decisiones de la etapa 7
 
 * **Renovate self-hosted** en un workflow de este repo, no la GitHub App: todo open source y corriendo en Actions,
@@ -107,5 +118,5 @@ twa-engineering-standards/
 
 ## A validar
 
-* Visibilidad de los repos: si son privados, Code Scanning (SARIF) necesita GitHub Advanced Security.
-* Dónde va el tablero de la etapa 8: uno nuevo, `twa-data` o Grafana (`twa-observability`).
+* Dónde se publica el tablero de la etapa 8 (`report.json`): un workflow en un repo privado, `twa-data`/Metabase o
+  solo local.

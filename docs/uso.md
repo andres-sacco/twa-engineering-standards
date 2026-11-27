@@ -62,7 +62,10 @@ jobs:
   [dependencias](dependencias.md) (grupo `twa-engineering-standards`, sin automerge). A mano: el SHA de un release es
   el del tag `vX.Y.Z` (`git ls-remote --tags` del repo).
 * Un `renovate.json` que extiende el preset (`DEP-01`, ver [dependencias](dependencias.md)), y sin
-  `.github/dependabot.yml`.
+  `.github/dependabot.yml`. En la configuración del repo, **Dependency graph** y **Dependabot alerts** activados: son
+  las alertas de vulnerabilidades que Renovate convierte en PR (reemplazan al escaneo nocturno, ver
+  [reportes](reportes.md)).
+* El repo se agrega a `config/report.yml` de este repo, para que aparezca en el tablero.
 * **El secret explícito**, no `secrets: inherit`: el workflow solo recibe lo que necesita.
 * Una línea en el `openapi.feature` del `OpenApiIT` para que la spec quede en `target/openapi.json` (`API-01`, ver
   [openapi](openapi.md)).
@@ -94,7 +97,7 @@ build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
 | `Security` | `SEC-01` a `SEC-05` | Gitleaks sobre los archivos y los commits del PR; Semgrep; SBOM CycloneDX y, sobre el SBOM, vulnerabilidades con Trivy y licencias contra la lista permitida. Sube `security-reports` y `sbom`. Detalle y supresiones en [seguridad](seguridad.md) |
 | `Docker image` | `DKR-01` a `DKR-04` | Hadolint sobre el Dockerfile; construye la imagen con el `settings.xml` como secret y la carga en el runner (no la publica); Trivy sobre los paquetes del sistema operativo y los secretos de las capas; políticas TWA con Conftest. Sube `docker-reports`. Detalle en [docker](docker.md) |
 | `Repository` | `WFL-01`, `DEP-01` | zizmor sobre `.github/workflows`; `renovate.json` con el preset y sin Dependabot |
-| `twa-standards` | — | Falla si falló algún job (un control en `block`) |
+| `twa-standards` | — | Una tabla con todos los controles en su resumen y el artifact `twa-results` (ver [reportes](reportes.md)); falla si falló algún job (un control en `block`) |
 
 Cada job deja en su resumen una tabla con el resultado de cada control, y los que fallan en `warn` quedan como
 anotación (⚠️) sin fallar el check.
