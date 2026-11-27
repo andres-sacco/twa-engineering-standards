@@ -37,14 +37,14 @@
   },
   "customManagers": [
     {
-      "description": "Versiones fijadas en scripts y workflows con un comentario '# renovate: datasource=… depName=…' en la línea anterior",
+      "description": "Versiones fijadas en scripts y workflows con un comentario '# renovate: datasource=… depName=…' en la línea anterior; una imagen puede llevar el digest (VERSION=\"1.2.3@sha256:…\")",
       "customType": "regex",
       "managerFilePatterns": [
         "/(^|/)scripts/[^/]+\\.sh$/",
         "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+)\\s+depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>\\S+))?\\s*\\n\\s*[A-Za-z_-]+[:=]\\s*\"?(?<currentValue>[^\"\\s]+)\"?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+)\\s+depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>\\S+))?\\s*\\n\\s*[A-Za-z_-]+[:=]\\s*\"?(?<currentValue>[^\"\\s@]+)(@(?<currentDigest>sha256:[a-f0-9]+))?\"?"
       ]
     }
   ],

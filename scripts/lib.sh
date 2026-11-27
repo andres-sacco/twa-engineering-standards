@@ -7,7 +7,7 @@
 # awk y printf con punto decimal, sea cual sea el locale
 export LC_NUMERIC=C
 
-# Versiones fijadas de las herramientas que se corren con uvx o pipx (las usan los scripts que cargan este archivo)
+# Versiones fijadas de las herramientas que se corren con uvx o pipx o con Docker (las usan los scripts que cargan este archivo)
 # Renovate las actualiza por el comentario de la línea anterior (renovate/default.json, customManagers)
 # shellcheck disable=SC2034
 # renovate: datasource=pypi depName=check-jsonschema
@@ -15,6 +15,17 @@ CHECK_JSONSCHEMA_VERSION="0.39.0"
 # shellcheck disable=SC2034
 # renovate: datasource=pypi depName=zizmor
 ZIZMOR_VERSION="1.33.1"
+# shellcheck disable=SC2034
+# renovate: datasource=pypi depName=semgrep
+SEMGREP_VERSION="1.185.0"
+
+# Imágenes de las herramientas que se corren con Docker: versión y digest (el digest cambia si alguien reescribe el tag)
+# shellcheck disable=SC2034
+# renovate: datasource=docker depName=ghcr.io/gitleaks/gitleaks
+GITLEAKS_VERSION="v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+# shellcheck disable=SC2034
+# renovate: datasource=docker depName=aquasec/trivy
+TRIVY_VERSION="0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb"
 
 STANDARDS_DIR="${STANDARDS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CATALOG="${STANDARDS_DIR}/config/controls.yml"
@@ -80,5 +91,23 @@ set_output() {
     printf '%s=%s\n' "$1" "$2" >>"$GITHUB_OUTPUT"
   else
     printf '%s=%s\n' "$1" "$2"
+  fi
+}
+
+# Directorio de los reportes de seguridad (SARIF, JSON, SBOM) que el workflow sube como artifact
+reports_dir() {
+  local dir="${REPORTS_DIR:-${PWD}/target/twa-reports}"
+  mkdir -p "$dir"
+  echo "$dir"
+}
+
+# Anotación de un hallazgo en el PR (como máximo 20 por control, para no tapar el resto)
+annotate() {
+  local severity="$1" title="$2" message="$3" file="${4:-}" line="${5:-}" level=warning
+  [[ "$severity" == "block" ]] && level=error
+  if [[ -n "$file" ]]; then
+    echo "::${level} title=${title},file=${file},line=${line:-1}::${message}"
+  else
+    echo "::${level} title=${title}::${message}"
   fi
 }

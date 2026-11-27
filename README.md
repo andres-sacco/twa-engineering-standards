@@ -11,9 +11,10 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 
 ## Estado
 
-Etapas 0 a 3 y 7 terminadas: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura, imagen,
-zizmor y el chequeo de Renovate (controles `BLD-*`, `TST-*`, `ARC-*`, `DKR-01`, `WFL-01` y `DEP-01`), y el preset de
-Renovate con su workflow self-hosted mantiene las dependencias. Faltan seguridad, OpenAPI y Docker (etapas 4 a 6).
+Etapas 0 a 4 y 7 terminadas: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura,
+seguridad (secretos, SAST, SBOM, vulnerabilidades y licencias), imagen, zizmor y el chequeo de Renovate (controles
+`BLD-*`, `TST-*`, `ARC-*`, `SEC-*`, `DKR-01`, `WFL-01` y `DEP-01`), y el preset de Renovate con su workflow
+self-hosted mantiene las dependencias. Faltan OpenAPI y Docker (etapas 5 y 6).
 Ningún repo lo usa todavía: el piloto con catalog es la etapa 9.
 
 ## Cómo se usa
@@ -48,6 +49,7 @@ make sample-image   # construye su imagen
 | Documento | Qué responde |
 |---|---|
 | [docs/uso.md](docs/uso.md) | Cómo un repo adopta `java-ci.yml`: su `ci.yml`, inputs, qué corre y qué cambia respecto del CI actual |
+| [docs/seguridad.md](docs/seguridad.md) | Los controles de seguridad: herramientas, reportes, cómo suprimir un hallazgo y cómo probarlos en local |
 | [docs/dependencias.md](docs/dependencias.md) | El preset de Renovate: cómo lo adopta un repo, grupos, automerge, Renovate self-hosted y sus secrets |
 | [docs/plan.md](docs/plan.md) | Las etapas, qué entrega cada una y con qué herramientas |
 | [docs/relevamiento.md](docs/relevamiento.md) | Cómo se construyen y validan hoy los repos TWA, y qué falta |

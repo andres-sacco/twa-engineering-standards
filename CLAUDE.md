@@ -19,10 +19,11 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
   su `renovate.json`.
 - `scripts/`: `lib.sh` (`report`, versiones de herramientas), `read-config.sh`, `run-control.sh`, un script por control
   que no es un comando de Maven (`check-build-versions.sh`, `check-architecture.sh`, `check-architecture-version.sh`,
-  `coverage.sh`, `check-workflows.sh`, `check-renovate.sh`), `maven-settings.sh` y `lint.sh`.
+  `coverage.sh`, `check-workflows.sh`, `check-renovate.sh`, `check-secrets.sh`, `check-sast.sh`, `check-spotbugs.sh`,
+  `sbom.sh`, `check-vulnerabilities.sh`, `check-licenses.sh`), `maven-settings.sh` y `lint.sh`.
 - `examples/sample-service/`: servicio mínimo con la forma de los servicios TWA, para probar los workflows. No es una
   plantilla.
-- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `dependencias.md` (Renovate),
+- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `seguridad.md` (SEC-*), `dependencias.md` (Renovate),
   `relevamiento.md`, `politica-de-severidades.md`, `versionado.md`.
 
 ## Reglas de trabajo
@@ -34,7 +35,8 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
   `report ID SEVERIDAD ok|fail "detalle"` (`scripts/lib.sh`), que es lo que decide si falla. Al terminar una etapa se
   agrega a `implementedStages`, y se actualizan `docs/uso.md` (qué corre) y `docs/plan.md`.
 - **Plugins de Maven por línea de comandos** con versión fijada en `env:` de `java-ci.yml`: no se le pide a ningún
-  repo que cambie su pom para un control.
+  repo que cambie su pom para un control. Las herramientas que corren con Docker (Gitleaks, Trivy) van con versión y
+  digest en `scripts/lib.sh`, con su comentario `# renovate:`.
 - **Actions fijadas por SHA** con la versión en un comentario (`uses: actions/checkout@<sha> # v7.0.1`),
   `permissions: {}` arriba y lo mínimo por job, con un comentario si es escritura, y `persist-credentials: false`.
   Nada de `${{ }}` dentro de `run:`: pasar por `env:`. zizmor lo verifica.

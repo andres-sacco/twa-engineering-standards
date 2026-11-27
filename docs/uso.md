@@ -88,7 +88,8 @@ build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
 |---|---|---|
 | `Config` | — | Valida `.twa-standards.yml` contra el schema, lo combina con los defaults y deja la tabla en el resumen |
 | `Code style` | `BLD-01` | `mvn spotless:check` |
-| `Build and test` | `BLD-03`, `ARC-02`, `BLD-04`, `BLD-02`, `ARC-01`, `TST-01`, `TST-02` | Versiones de Java y Maven exigidas por el enforcer del pom; versión mínima de la librería de reglas; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; qué reglas corrieron y cuáles rompen; cobertura de líneas contra el mínimo y contra la rama principal. Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
+| `Build and test` | `BLD-03`, `ARC-02`, `BLD-04`, `BLD-02`, `ARC-01`, `TST-01`, `TST-02`, `SEC-02` | Versiones de Java y Maven exigidas por el enforcer del pom; versión mínima de la librería de reglas; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; qué reglas corrieron y cuáles rompen; cobertura de líneas contra el mínimo y contra la rama principal; al final, SpotBugs + FindSecBugs sobre lo compilado (`SEC-02`). Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
+| `Security` | `SEC-01` a `SEC-05` | Gitleaks sobre los archivos y los commits del PR; Semgrep; SBOM CycloneDX y, sobre el SBOM, vulnerabilidades con Trivy y licencias contra la lista permitida. Sube `security-reports` y `sbom`. Detalle y supresiones en [seguridad](seguridad.md) |
 | `Docker image` | `DKR-01` | Construye la imagen con el `settings.xml` como secret; no la publica |
 | `Repository` | `WFL-01`, `DEP-01` | zizmor sobre `.github/workflows`; `renovate.json` con el preset y sin Dependabot |
 | `twa-standards` | — | Falla si falló algún job (un control en `block`) |
@@ -100,6 +101,7 @@ anotación (⚠️) sin fallar el check.
 
 | Antes | Ahora |
 |---|---|
+| Sin controles de seguridad | Secretos (bloquea desde el primer día), SAST, SBOM, vulnerabilidades y licencias en `warn` |
 | `style` bloquea y `build` espera a `style` | `Code style` y `Build and test` corren en paralelo. El build salta Spotless (`-Dspotless.check.skip=true`): el formato se reporta una vez |
 | Sin cobertura | JaCoCo 0.8.16 sin tocar el pom (`prepare-agent` + `report` por línea de comandos), unit e IT juntos |
 | El enforcer del pom (si está) | Además, `BLD-03` exige que esté y `BLD-04` corre convergencia de dependencias |
