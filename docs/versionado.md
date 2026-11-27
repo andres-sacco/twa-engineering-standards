@@ -39,8 +39,20 @@ incompatible.
    también actualiza el default de `standards-ref` en `java-ci.yml` (la línea marcada con `x-release-please-version`),
    así el workflow de un release lee los scripts y el catálogo de ese mismo release.
 
+### El token de release-please
+
+release-please corre con el secret **`RELEASE_PLEASE_TOKEN`**, no con el `GITHUB_TOKEN`, por dos razones:
+
+* El PR de release cambia `.github/workflows/java-ci.yml`, y el `GITHUB_TOKEN` no puede crear commits que toquen
+  workflows (ese permiso no se le puede dar): falla con `Error adding to tree: <sha>`.
+* Un PR abierto con el `GITHUB_TOKEN` no dispara el CI; con un token propio, el PR de release corre `Lint` y el
+  servicio de prueba como cualquier otro.
+
+Es un fine-grained token sobre **solo este repo** con Contents, Pull requests y Workflows en **Read and write**
+(Metadata: read se agrega solo). Se guarda en Settings → Secrets and variables → Actions. Al vencer, el workflow
+`Release` vuelve a fallar: se renueva y se corre de nuevo. Mover `vX` y `vX.Y` sigue con el `GITHUB_TOKEN` (solo
+mueve tags).
+
 ## A validar
 
-* El PR de release lo abre el `GITHUB_TOKEN`, y un PR abierto con ese token **no dispara el CI**. Si se quiere CI en
-  ese PR hace falta un token de una GitHub App o un PAT (secret aparte).
 * Que la rama `main` tenga protección con el check `Lint` y `Sample service / twa-standards` requeridos.

@@ -118,8 +118,8 @@ twa-engineering-standards/
 
 ## A validar
 
-* El release `v0.1.0`: el workflow `Release` falla hasta que el repo permita escribir al `GITHUB_TOKEN`
-  ([despliegue](despliegue.md#antes-del-primer-release)).
+* El release `v0.1.0`: el workflow `Release` necesita el secret `RELEASE_PLEASE_TOKEN`
+  ([versionado](versionado.md#el-token-de-release-please)).
 * CODEOWNERS en cada repo cuando haya más de un mantenedor.
 
 * Dónde se publica el tablero de la etapa 8 (`report.json`): un workflow en un repo privado, `twa-data`/Metabase o

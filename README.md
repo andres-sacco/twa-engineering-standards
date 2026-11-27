@@ -99,6 +99,7 @@ Inputs, diferencias con el CI actual y limitaciones: [docs/uso.md](docs/uso.md).
 |---|---|---|
 | `PACKAGES_TOKEN` | Cada repo que adopta `java-ci.yml` (y este) | Token clásico con `read:packages`: las librerías TWA de GitHub Packages |
 | `RENOVATE_TOKEN` | Este repo | Renovate self-hosted: ramas, PRs e issues en los repos `twa-*` ([dependencias](docs/dependencias.md#renovate-self-hosted)) |
+| `RELEASE_PLEASE_TOKEN` | Este repo | release-please: el PR de release cambia `java-ci.yml`, y el `GITHUB_TOKEN` no puede tocar workflows ([versionado](docs/versionado.md#el-token-de-release-please)) |
 | `TWA_REPORT_TOKEN` | Local (variable de entorno) | `make report`: lectura de Actions en los repos del tablero ([reportes](docs/reportes.md#el-tablero)) |
 
 ## Comandos
