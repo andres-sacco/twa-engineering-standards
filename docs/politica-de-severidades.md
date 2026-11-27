@@ -49,11 +49,11 @@ Los ids son estables: un control que se elimina no reusa su id. La fuente de ver
 | `API-01` | La spec OpenAPI se exporta en el build | springdoc-openapi-maven-plugin | warn | 5 |
 | `API-02` | La spec cumple las convenciones de la plataforma (base path, Problem Details, `code` de error) | Spectral | warn | 5 |
 | `API-03` | Sin cambios incompatibles contra `main` sin aprobación explícita | oasdiff | warn | 5 |
-| `DKR-01` | La imagen construye | Docker Buildx | block (ya bloquea) | 6 |
+| `DKR-01` | La imagen construye | Docker Buildx | block (ya bloquea) | 2 |
 | `DKR-02` | Buenas prácticas del Dockerfile | Hadolint | warn | 6 |
 | `DKR-03` | Vulnerabilidades CRITICAL/HIGH con fix en la imagen | Trivy (image) | warn | 6 |
 | `DKR-04` | Políticas TWA: usuario sin privilegios, `HEALTHCHECK`, base `eclipse-temurin`, sin secretos en capas | Conftest (OPA), Dockle | warn | 6 |
 | `DEP-01` | El repo usa el preset de Renovate | Renovate | warn | 7 |
-| `WFL-01` | Actions fijadas por SHA y `permissions` mínimos | zizmor | warn | 1 (en este repo) y 2 (en los consumidores) |
+| `WFL-01` | Actions fijadas por SHA y `permissions` mínimos | zizmor | warn | 2 |
 
 Los seis servicios ya cumplen `DKR-04`: es candidato a pasar a `block` apenas se implemente.

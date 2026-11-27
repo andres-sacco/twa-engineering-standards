@@ -74,3 +74,20 @@ mezcla `@v4` y `@v7`.
    pasa a una composite action.
 2. catalog no tiene `maven-enforcer-plugin`; el resto exige Maven y, algunos, Java: pasa a ser el control `BLD-03`.
 3. Versiones de las actions distintas entre servicios y librerías: se unifican y se fijan por SHA (`WFL-01`).
+
+## Medición con `java-ci.yml` (etapa 2)
+
+Los pasos del job `Build and test` corridos en local sobre `main` de catalog, con un `.twa-standards.yml` mínimo
+(2026-11-27):
+
+| Control | Resultado |
+|---|---|
+| `BLD-01` Spotless | ✅ |
+| `BLD-02` build y tests | ✅ 81 tests unitarios y 9 IT del loader, más los del service |
+| `BLD-03` versiones exigidas | ⚠️ sin `maven-enforcer-plugin` (requireJavaVersion, requireMavenVersion) |
+| `BLD-04` convergencia | ✅ |
+| `TST-01` cobertura de líneas | ✅ **84,98 %** (catalog-service 81,7 %, catalog-loader 90,3 %) |
+
+zizmor (`WFL-01`) sobre el CI actual: catalog y search tienen 9 actions sin fijar por SHA y 3 checkouts con
+credenciales persistidas; twa-layered-rules, 5 y 2. Se resuelve al reemplazar el `ci.yml` por la llamada a
+`java-ci.yml`, salvo los `release.yml` de las librerías.

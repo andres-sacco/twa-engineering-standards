@@ -11,12 +11,13 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 
 ## Estado
 
-Etapa 1 (base del repo) terminada: catálogo de controles, schema de `.twa-standards.yml`, CI propio, versionado y
-servicio de prueba. Todavía no hay workflows reutilizables para consumir: llegan con la etapa 2.
+Etapa 2 terminada: `java-ci.yml` corre build, tests, cobertura, enforcer, imagen y zizmor (controles `BLD-*`,
+`TST-*`, `DKR-01` y `WFL-01`). Ningún repo lo usa todavía: el piloto con catalog es la etapa 9.
 
-## Cómo se usa (desde la etapa 2)
+## Cómo se usa
 
-Cada repo tiene un `.twa-standards.yml` en la raíz con lo que cambia respecto de los defaults:
+Cada repo reemplaza su `ci.yml` por una llamada a `java-ci.yml` ([docs/uso.md](docs/uso.md)) y tiene un
+`.twa-standards.yml` en la raíz con lo que cambia respecto de los defaults:
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/andres-sacco/twa-engineering-standards/main/schema/twa-standards.schema.json
@@ -44,6 +45,7 @@ make sample-image   # construye su imagen
 
 | Documento | Qué responde |
 |---|---|
+| [docs/uso.md](docs/uso.md) | Cómo un repo adopta `java-ci.yml`: su `ci.yml`, inputs, qué corre y qué cambia respecto del CI actual |
 | [docs/plan.md](docs/plan.md) | Las etapas, qué entrega cada una y con qué herramientas |
 | [docs/relevamiento.md](docs/relevamiento.md) | Cómo se construyen y validan hoy los repos TWA, y qué falta |
 | [config/controls.yml](config/controls.yml) | El catálogo de controles: id, severidad por defecto, herramienta y etapa |

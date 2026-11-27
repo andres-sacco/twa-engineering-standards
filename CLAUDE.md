@@ -10,24 +10,32 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
   defecto, la herramienta y la etapa. Un id no se reusa.
 - `schema/twa-standards.schema.json`: el formato del `.twa-standards.yml` de cada repo. Casos de prueba en
   `schema/tests/valid` y `schema/tests/invalid` (cada inválido, con un comentario que dice por qué).
-- `.github/workflows/`: `ci.yml` y `release.yml` son de este repo; los reutilizables (`on: workflow_call`) llegan desde
-  la etapa 2.
+- `.github/workflows/java-ci.yml`: **el** workflow reutilizable (servicios y librerías). Un job por grupo de
+  controles; cada job hace checkout de este repo en `standards-ref` y corre `scripts/`. No llama a otros reutilizables
+  ni a composite actions de este repo (ver `docs/plan.md` § Decisiones de la etapa 2). `ci.yml` y `release.yml` son de
+  este repo; `ci.yml` corre `java-ci.yml` sobre el servicio de prueba.
+- `scripts/`: `lib.sh` (`report`, versiones de herramientas), `read-config.sh`, `run-control.sh`, un script por control
+  que no es un comando de Maven (`check-build-versions.sh`, `coverage.sh`, `check-workflows.sh`), `maven-settings.sh`
+  y `lint.sh`.
 - `examples/sample-service/`: servicio mínimo con la forma de los servicios TWA, para probar los workflows. No es una
   plantilla.
-- `scripts/lint.sh`: `make lint`.
-- `docs/`: `plan.md` (etapas y estado), `relevamiento.md`, `politica-de-severidades.md`, `versionado.md`.
+- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `relevamiento.md`,
+  `politica-de-severidades.md`, `versionado.md`.
 
 ## Reglas de trabajo
 
 - **Idioma:** español en documentación, comentarios, mensajes de salida y commits. Nombres de herramientas, inputs,
   outputs y claves de YAML en inglés.
 - **Un control nuevo** se agrega en `config/controls.yml` y en la tabla de `docs/politica-de-severidades.md` con la
-  misma severidad (`make lint` lo compara), entra en `warn` salvo lo que hoy ya bloquea, y su mensaje de falla empieza
-  con el id.
+  misma severidad (`make lint` lo compara), entra en `warn` salvo lo que hoy ya bloquea, y termina con
+  `report ID SEVERIDAD ok|fail "detalle"` (`scripts/lib.sh`), que es lo que decide si falla. Al terminar una etapa se
+  sube `implementedStage`, y se actualizan `docs/uso.md` (qué corre) y `docs/plan.md`.
+- **Plugins de Maven por línea de comandos** con versión fijada en `env:` de `java-ci.yml`: no se le pide a ningún
+  repo que cambie su pom para un control.
 - **Actions fijadas por SHA** con la versión en un comentario (`uses: actions/checkout@<sha> # v7.0.1`),
   `permissions: {}` arriba y lo mínimo por job, con un comentario si es escritura, y `persist-credentials: false`.
   Nada de `${{ }}` dentro de `run:`: pasar por `env:`. zizmor lo verifica.
-- **Versiones de herramientas fijadas** (en `scripts/lint.sh` y, desde la etapa 2, en los workflows). Nunca `latest`.
+- **Versiones de herramientas fijadas** (`scripts/lib.sh`, `scripts/lint.sh` y `env:` de `java-ci.yml`). Nunca `latest`.
 - **Compatibilidad:** lo que hace fallar un build que antes pasaba es un cambio incompatible (`docs/versionado.md`).
 - **Sin código de negocio** y sin reglas que pertenezcan a otro repo: las convenciones de las APIs están en
   `../twa-platform/docs/arquitectura.md`; acá solo se automatizan.

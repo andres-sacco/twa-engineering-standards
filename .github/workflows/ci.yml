@@ -1,7 +1,7 @@
 name: CI
 
-# CI de este repo: valida los workflows, el schema y el catálogo de controles (make lint), y que el servicio de prueba
-# construya. Las actions van fijadas por SHA, con la versión en el comentario (WFL-01).
+# CI de este repo: valida los workflows, el schema y el catálogo de controles (make lint), y corre java-ci.yml sobre el
+# servicio de prueba. Las actions van fijadas por SHA, con la versión en el comentario (WFL-01).
 on:
   push:
     branches: [main]
@@ -27,25 +27,16 @@ jobs:
       - name: make lint
         run: make lint
 
+  # El workflow reutilizable, con el código de este commit, sobre el servicio de prueba: es la prueba de punta a punta
+  # de java-ci.yml y de los scripts que corre
   sample-service:
     name: Sample service
-    runs-on: ubuntu-latest
     permissions:
       contents: read
-    defaults:
-      run:
-        working-directory: examples/sample-service
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with:
-          distribution: temurin
-          java-version: '25'
-          cache: maven
-          cache-dependency-path: examples/sample-service/pom.xml
-      - name: Build and test
-        run: mvn -B -ntp verify
-      - name: Build image
-        run: docker build --tag sample-service:ci .
+    # ./ y no $/ (self-repository): actionlint 1.7.12 todavía no reconoce $/. Cambiar cuando lo soporte
+    uses: ./.github/workflows/java-ci.yml # zizmor: ignore[self-repository]
+    with:
+      working-directory: examples/sample-service
+      standards-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      artifact-name: sample-service
+      artifact-path: target/sample-service-*.jar

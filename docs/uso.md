@@ -1,0 +1,119 @@
+# Uso: cómo un repo adopta java-ci.yml
+
+`java-ci.yml` es un solo workflow reutilizable para servicios y librerías Java. El tipo de repo, la versión de Java y
+la severidad de cada control salen del `.twa-standards.yml` del repo; el workflow corre lo que le corresponde.
+
+## 1. `.twa-standards.yml`
+
+En la raíz del repo (o en `working-directory`). Lo mínimo:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/andres-sacco/twa-engineering-standards/main/schema/twa-standards.schema.json
+version: 1
+type: service        # service | library
+java: "25"           # default 25; las librerías declaran la suya ("11", "17")
+```
+
+Solo se agregan los controles que cambian su default (`config/controls.yml`). Bajar una severidad necesita `reason`:
+
+```yaml
+controls:
+  TST-01:
+    params:
+      minLineCoverage: 45   # el default es 60
+  BLD-01:
+    severity: "off"
+    reason: La librería no tiene Spotless configurado (pendiente)
+```
+
+## 2. `.github/workflows/ci.yml`
+
+Reemplaza el `ci.yml` actual del repo:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  ci:
+    permissions:
+      contents: read
+    uses: andres-sacco/twa-engineering-standards/.github/workflows/java-ci.yml@<sha> # v0.1.0
+    with:
+      artifact-name: search-service
+      artifact-path: search-service/target/search-service-*-exec.jar
+    secrets:
+      PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+```
+
+* **Por SHA, con la versión en el comentario**, como cualquier action: así el repo cumple su propio `WFL-01` (zizmor
+  marca como `unpinned-uses` una referencia por tag). Renovate actualiza el SHA y el comentario (etapa 7); hasta
+  entonces, a mano: el SHA de un release es el del tag `vX.Y.Z` (`git ls-remote --tags` del repo).
+* **El secret explícito**, no `secrets: inherit`: el workflow solo recibe lo que necesita.
+* `.github/maven-settings.sh` se borra: el `settings.xml` lo arma `scripts/maven-settings.sh` de este repo.
+* El check que se exige en la protección de `main` es **`ci / twa-standards`**: resume a todos los jobs y falla solo
+  si falló un control en `block`.
+
+### Inputs
+
+| Input | Default | Para qué |
+|---|---|---|
+| `working-directory` | `.` | Directorio del pom raíz |
+| `config-file` | `.twa-standards.yml` | Relativo a `working-directory` |
+| `maven-args` | — | Argumentos extra para Maven en BLD-02 y BLD-04 (ej. `-pl search-service -am`) |
+| `artifact-name` / `artifact-path` | — | Sube el jar como artifact (glob relativo a `working-directory`) |
+| `docker-context` / `dockerfile` | `.` / `Dockerfile` | Relativos a `working-directory` |
+| `standards-ref` | la versión del release | **No se toca.** De esa versión de este repo salen los scripts y el catálogo |
+
+Secret: `PACKAGES_TOKEN`, token clásico con `read:packages` para las librerías TWA de GitHub Packages. Sin él, el
+build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
+
+## Qué corre
+
+| Job | Controles | Qué hace |
+|---|---|---|
+| `Config` | — | Valida `.twa-standards.yml` contra el schema, lo combina con los defaults y deja la tabla en el resumen |
+| `Code style` | `BLD-01` | `mvn spotless:check` |
+| `Build and test` | `BLD-03`, `BLD-04`, `BLD-02`, `TST-01`, `TST-02` | Versiones de Java y Maven exigidas por el enforcer del pom; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; cobertura de líneas contra el mínimo y contra la rama principal. Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
+| `Docker image` | `DKR-01` | Construye la imagen con el `settings.xml` como secret; no la publica |
+| `Workflows` | `WFL-01` | zizmor sobre `.github/workflows` |
+| `twa-standards` | — | Falla si falló algún job (un control en `block`) |
+
+Cada job deja en su resumen una tabla con el resultado de cada control, y los que fallan en `warn` quedan como
+anotación (⚠️) sin fallar el check.
+
+### Diferencias con el `ci.yml` actual de los servicios
+
+| Antes | Ahora |
+|---|---|
+| `style` bloquea y `build` espera a `style` | `Code style` y `Build and test` corren en paralelo. El build salta Spotless (`-Dspotless.check.skip=true`): el formato se reporta una vez |
+| Sin cobertura | JaCoCo 0.8.16 sin tocar el pom (`prepare-agent` + `report` por línea de comandos), unit e IT juntos |
+| El enforcer del pom (si está) | Además, `BLD-03` exige que esté y `BLD-04` corre convergencia de dependencias |
+| Actions por tag | Por SHA (y `WFL-01` lo verifica en el repo) |
+| Dos formas de armar el `settings.xml` | Una sola, con los tres servers de GitHub Packages |
+
+## Cobertura contra la rama principal (TST-02)
+
+En cada push a la rama principal se guarda la cobertura en la cache de Actions
+(`twa-coverage-<working-directory>-<rama>-<sha>`); un PR la restaura y compara. La tolerancia es `maxDrop` (default
+0,5 puntos). Hasta el primer push a la rama principal con el workflow nuevo no hay contra qué comparar y TST-02 pasa.
+
+El mínimo de TST-01 (default **60 %**) es provisorio: se ajusta con lo que midan los repos en `warn`
+(`docs/politica-de-severidades.md`).
+
+## Limitaciones
+
+* PRs desde forks: el workflow hace checkout de este repo en `standards-ref`, que existe; los secrets no llegan, así que
+  las librerías de GitHub Packages no se pueden bajar (como hoy).
+* `standards-ref` es un input y no la versión con la que se llamó al workflow porque GitHub no expone, dentro de un
+  workflow reutilizable, el commit desde el que corre. release-please actualiza su default en cada release.

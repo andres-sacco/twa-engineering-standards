@@ -3,6 +3,9 @@
 # (make lint). Un id no se reusa: un control eliminado queda con `removed: true`.
 #
 # severity: la severidad por defecto (off | warn | block). appliesTo: los tipos de repo donde corre (service, library).
+# stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa mayor que implementedStage se
+# pueden configurar pero todavía no corren.
+implementedStage: 2
 controls:
   BLD-01:
     name: Formato del código
@@ -104,7 +107,7 @@ controls:
     name: La imagen construye
     tool: Docker Buildx
     severity: block
-    stage: 6
+    stage: 2
     appliesTo: [service]
   DKR-02:
     name: Buenas prácticas del Dockerfile
