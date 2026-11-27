@@ -1,0 +1,214 @@
+# API-02: convenciones de las APIs TWA ("Convenciones comunes a todas las APIs" de docs/arquitectura.md de
+# twa-platform) como reglas de Spectral, más las reglas recomendadas de Spectral para OpenAPI.
+#
+# severity error: rompe una convención y hace fallar API-02. warn e info: se reportan y no fallan.
+# Lo que la spec no muestra (cifrado de datos personales, logs, Accept-Language, idempotencia de cada operación) no
+# está acá: se revisa en el código y en las pruebas de cada servicio.
+# Detalle y cómo suprimir una regla en un repo: docs/openapi.md.
+extends:
+  - [spectral:oas, recommended]
+
+aliases:
+  Operation:
+    - "$.paths[*][get,put,post,delete,patch]"
+  ErrorResponse:
+    - "$.paths[*][get,put,post,delete,patch].responses[?(@property.match(/^[45]/))]"
+  ProblemSchema:
+    - "$.paths[*][get,put,post,delete,patch].responses[*].content['application/problem+json'].schema"
+
+rules:
+  # Spectral recomendado: un ejemplo que no cumple su schema es un problema de documentación, no del contrato
+  oas3-valid-media-example: warn
+  oas3-valid-schema-example: warn
+
+  twa-servers:
+    description: La spec declara el server con el base path del servicio
+    severity: error
+    given: "$"
+    then:
+      field: servers
+      function: truthy
+
+  twa-base-path:
+    description: El base path es /api/flights/<servicio>
+    message: "El server {{value}} no termina en /api/flights/<servicio>"
+    severity: error
+    given: "$.servers[*].url"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^(https?://[^/]+)?/api/flights/[a-z][a-z0-9-]*/?$"
+
+  twa-relative-server:
+    description: "El server es relativo (/api/flights/<servicio>): la spec sirve en cualquier ambiente, sin el host de quien la generó"
+    message: "El server {{value}} tiene host: declarar el server relativo"
+    severity: info
+    given: "$.servers[*].url"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^/"
+
+  twa-paths-without-base-path:
+    description: Los paths no repiten el base path (va en servers)
+    message: "{{property}} repite el base path"
+    severity: error
+    given: "$.paths"
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions:
+        notMatch: "^/api/"
+
+  twa-path-kebab-case:
+    description: Los segmentos de un path van en minúscula y kebab-case (/ancillary-types/{code})
+    message: "{{property}} no es kebab-case"
+    severity: warn
+    given: "$.paths"
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions:
+        match: "^(/([a-z0-9]+(-[a-z0-9]+)*|\\{[A-Za-z][A-Za-z0-9]*\\}))+$"
+
+  twa-operation-summary:
+    description: Cada operación tiene summary (es el título en Swagger UI)
+    severity: error
+    given: "#Operation"
+    then:
+      field: summary
+      function: truthy
+
+  twa-operation-id-generated:
+    description: El operationId no es uno generado por springdoc al repetirse un nombre de método (getById_1)
+    message: "operationId {{value}} generado: ponerle uno propio con @Operation(operationId = …)"
+    severity: error
+    given: "#Operation.operationId"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "_[0-9]+$"
+
+  twa-client-id-header:
+    description: Cada operación documenta el header X-Client-Id (quién consume la API)
+    message: "La operación no declara el header X-Client-Id"
+    severity: error
+    given: "#Operation"
+    then:
+      field: parameters
+      function: schema
+      functionOptions:
+        schema:
+          type: array
+          contains:
+            type: object
+            required: [name, in]
+            properties:
+              name:
+                const: X-Client-Id
+              in:
+                const: header
+
+  twa-json-media-types:
+    description: Las respuestas son application/json o application/problem+json, nunca */*
+    message: "Media type {{property}}: las respuestas son application/json o application/problem+json"
+    severity: error
+    given: "$.paths[*][get,put,post,delete,patch].responses[*].content"
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions:
+        match: "^application/(problem\\+)?json$"
+
+  twa-error-problem-details:
+    description: Un error (4xx, 5xx) responde Problem Details (RFC 9457) en application/problem+json
+    message: "El error no responde application/problem+json"
+    severity: error
+    given: "#ErrorResponse"
+    then:
+      field: content.application/problem+json
+      function: truthy
+
+  twa-error-code:
+    description: El schema de Problem Details tiene `code` (string), el código estable con el que deciden los clientes, y `traceId` para los 5xx
+    message: "El schema de error no tiene code (string) y traceId"
+    severity: error
+    given: "#ProblemSchema"
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          type: object
+          required: [properties]
+          properties:
+            properties:
+              type: object
+              required: [code, traceId]
+              properties:
+                code:
+                  type: object
+                  properties:
+                    type:
+                      const: string
+
+  twa-error-examples:
+    description: Cada error tiene al menos un ejemplo (uno por code)
+    message: "El error no tiene ejemplos"
+    severity: warn
+    given: "$.paths[*][get,put,post,delete,patch].responses[*].content['application/problem+json']"
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required: [examples]
+            - required: [example]
+
+  twa-response-examples:
+    description: Las respuestas exitosas con cuerpo tienen ejemplo
+    message: "La respuesta no tiene ejemplo"
+    severity: warn
+    given: "$.paths[*][get,put,post,delete,patch].responses[?(@property.match(/^2/))].content['application/json']"
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required: [examples]
+            - required: [example]
+            - properties:
+                schema:
+                  required: [example]
+
+  twa-request-examples:
+    description: Los cuerpos de los requests tienen ejemplo
+    message: "El request no tiene ejemplo"
+    severity: warn
+    given: "#Operation.requestBody.content['application/json']"
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required: [examples]
+            - required: [example]
+            - properties:
+                schema:
+                  required: [example]
+
+  twa-amount-as-string:
+    description: Los importes y las tasas van como string decimal ("1250.00"), nunca number, para no perder precisión
+    message: "Es number: los importes y las tasas van como string decimal"
+    severity: error
+    given: "$..properties[?(@property.match(/^(amount|price|total|totalPrice|tax|taxes|fee|fees|fare|rate|.*(Amount|Price|Tax|Taxes|Fee|Fees|Fare|Rate))$/))]"
+    then:
+      field: type
+      function: schema
+      functionOptions:
+        schema:
+          not:
+            anyOf:
+              - const: number
+              - type: array
+                contains:
+                  const: number

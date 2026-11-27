@@ -66,6 +66,38 @@ if [[ "$(grep -oE 'renovate-version: \S+' .github/workflows/renovate.yml | cut -
   fail "renovate.yml y lint.sh usan versiones distintas de Renovate"
 fi
 
+section "Spectral ${SPECTRAL_VERSION}: config/spectral/twa.yaml contra config/spectral/tests"
+spectral_codes() {
+  local out
+  out="$(mktemp)"
+  npx --yes --quiet --package "@stoplight/spectral-cli@${SPECTRAL_VERSION}" -- spectral lint "$1" \
+    --ruleset config/spectral/twa.yaml --fail-severity error --quiet -f json -o.json "$out" >/dev/null 2>&1 || true
+  jq -r --argjson max "$2" '.[] | select(.severity <= $max) | .code' "$out" 2>/dev/null | sort -u
+  rm -f "$out"
+}
+found="$(spectral_codes config/spectral/tests/valida.yaml 1)"
+if [[ -z "$found" ]]; then
+  ok "valida.yaml: sin errores ni avisos"
+else
+  fail "valida.yaml tiene hallazgos: $(tr '\n' ' ' <<<"$found")"
+fi
+# Cada regla twa-* en error tiene que aparecer en invalida.yaml (salvo twa-servers: esa spec sí tiene servers)
+found="$(spectral_codes config/spectral/tests/invalida.yaml 0)"
+missing=()
+if ! rules="$(yq '.rules | to_entries | .[] | select(.key | test("^twa-")) | select(.value.severity == "error") | .key' \
+  config/spectral/twa.yaml)" || [[ -z "$rules" ]]; then
+  fail "no se pudieron leer las reglas twa-* de config/spectral/twa.yaml (YAML inválido)"
+fi
+while read -r rule; do
+  [[ -z "$rule" || "$rule" == "twa-servers" ]] && continue
+  grep -qx "$rule" <<<"$found" || missing+=("$rule")
+done <<<"$rules"
+if ((${#missing[@]} == 0)); then
+  ok "invalida.yaml rompe todas las reglas twa-* en error"
+else
+  fail "invalida.yaml no rompe: ${missing[*]}"
+fi
+
 section "Catálogo de controles (${CATALOG})"
 mapfile -t ids < <(yq '.controls | keys | .[]' "$CATALOG")
 for id in "${ids[@]}"; do

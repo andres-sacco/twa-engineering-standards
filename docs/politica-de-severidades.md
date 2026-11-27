@@ -46,7 +46,7 @@ Los ids son estables: un control que se elimina no reusa su id. La fuente de ver
 | `SEC-03` | Vulnerabilidades CRITICAL/HIGH con versión corregida en dependencias | Trivy (sobre el SBOM) | warn | 4 |
 | `SEC-04` | SBOM generado y publicado como artifact | CycloneDX Maven plugin | warn | 4 |
 | `SEC-05` | Licencias de dependencias fuera de la lista permitida | SBOM (CycloneDX) contra la lista permitida | warn | 4 |
-| `API-01` | La spec OpenAPI se exporta en el build | springdoc-openapi-maven-plugin | warn | 5 |
+| `API-01` | La spec OpenAPI se exporta en el build | springdoc + OpenApiIT (target/openapi.json) | warn | 5 |
 | `API-02` | La spec cumple las convenciones de la plataforma (base path, Problem Details, `code` de error) | Spectral | warn | 5 |
 | `API-03` | Sin cambios incompatibles contra `main` sin aprobación explícita | oasdiff | warn | 5 |
 | `DKR-01` | La imagen construye | Docker Buildx | block (ya bloquea) | 2 |

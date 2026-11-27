@@ -64,6 +64,8 @@ jobs:
 * Un `renovate.json` que extiende el preset (`DEP-01`, ver [dependencias](dependencias.md)), y sin
   `.github/dependabot.yml`.
 * **El secret explícito**, no `secrets: inherit`: el workflow solo recibe lo que necesita.
+* Una línea en el `openapi.feature` del `OpenApiIT` para que la spec quede en `target/openapi.json` (`API-01`, ver
+  [openapi](openapi.md)).
 * `.github/maven-settings.sh` se borra: el `settings.xml` lo arma `scripts/maven-settings.sh` de este repo.
 * El check que se exige en la protección de `main` es **`ci / twa-standards`**: resume a todos los jobs y falla solo
   si falló un control en `block`.
@@ -88,7 +90,7 @@ build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
 |---|---|---|
 | `Config` | — | Valida `.twa-standards.yml` contra el schema, lo combina con los defaults y deja la tabla en el resumen |
 | `Code style` | `BLD-01` | `mvn spotless:check` |
-| `Build and test` | `BLD-03`, `ARC-02`, `BLD-04`, `BLD-02`, `ARC-01`, `TST-01`, `TST-02`, `SEC-02` | Versiones de Java y Maven exigidas por el enforcer del pom; versión mínima de la librería de reglas; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; qué reglas corrieron y cuáles rompen; cobertura de líneas contra el mínimo y contra la rama principal; al final, SpotBugs + FindSecBugs sobre lo compilado (`SEC-02`). Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
+| `Build and test` | `BLD-03`, `ARC-02`, `BLD-04`, `BLD-02`, `ARC-01`, `TST-01`, `TST-02`, `SEC-02`, `API-01`, `API-02`, `API-03` | Versiones de Java y Maven exigidas por el enforcer del pom; versión mínima de la librería de reglas; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; qué reglas corrieron y cuáles rompen; cobertura de líneas contra el mínimo y contra la rama principal; al final, SpotBugs + FindSecBugs sobre lo compilado (`SEC-02`) y el contrato: la spec de `target/openapi.json` (`API-01`), Spectral (`API-02`) y oasdiff contra la rama principal (`API-03`, ver [openapi](openapi.md)). Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
 | `Security` | `SEC-01` a `SEC-05` | Gitleaks sobre los archivos y los commits del PR; Semgrep; SBOM CycloneDX y, sobre el SBOM, vulnerabilidades con Trivy y licencias contra la lista permitida. Sube `security-reports` y `sbom`. Detalle y supresiones en [seguridad](seguridad.md) |
 | `Docker image` | `DKR-01` | Construye la imagen con el `settings.xml` como secret; no la publica |
 | `Repository` | `WFL-01`, `DEP-01` | zizmor sobre `.github/workflows`; `renovate.json` con el preset y sin Dependabot |
@@ -101,6 +103,7 @@ anotación (⚠️) sin fallar el check.
 
 | Antes | Ahora |
 |---|---|
+| Sin revisión del contrato fuera de los tests | Spectral con las convenciones de la plataforma y oasdiff contra la rama principal |
 | Sin controles de seguridad | Secretos (bloquea desde el primer día), SAST, SBOM, vulnerabilidades y licencias en `warn` |
 | `style` bloquea y `build` espera a `style` | `Code style` y `Build and test` corren en paralelo. El build salta Spotless (`-Dspotless.check.skip=true`): el formato se reporta una vez |
 | Sin cobertura | JaCoCo 0.8.16 sin tocar el pom (`prepare-agent` + `report` por línea de comandos), unit e IT juntos |
