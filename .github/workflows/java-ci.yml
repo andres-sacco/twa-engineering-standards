@@ -6,7 +6,8 @@ name: TWA Java CI
 #
 # Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02, SEC-02 SpotBugs,
 # API-01, API-02, API-03) |
-# security (SEC-01, SEC-02 Semgrep, SEC-03, SEC-04, SEC-05) | image (DKR-01) | repository (WFL-01, DEP-01)
+# security (SEC-01, SEC-02 Semgrep, SEC-03, SEC-04, SEC-05) | image (DKR-01, DKR-02, DKR-03, DKR-04) |
+# repository (WFL-01, DEP-01)
 # → twa-standards. El último resume a los demás: es el check que se exige en la protección de la rama.
 on:
   workflow_call:
@@ -499,10 +500,25 @@ jobs:
   image:
     name: Docker image
     needs: config
-    if: fromJSON(needs.config.outputs.severities)['DKR-01'] != 'off'
+    if: >-
+      fromJSON(needs.config.outputs.severities)['DKR-01'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['DKR-02'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['DKR-03'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['DKR-04'] != 'off'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      DOCKERFILE: ${{ inputs.dockerfile }}
+      # DKR-03 y DKR-04 escanean la imagen construida: se carga en el Docker del runner con este nombre
+      IMAGE: twa-ci/image:${{ github.sha }}
+      NEEDS_IMAGE: >-
+        ${{ fromJSON(needs.config.outputs.severities)['DKR-01'] != 'off'
+        || fromJSON(needs.config.outputs.severities)['DKR-03'] != 'off'
+        || fromJSON(needs.config.outputs.severities)['DKR-04'] != 'off' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -514,30 +530,45 @@ jobs:
           path: .twa-standards
           persist-credentials: false
       - name: Standards
+        working-directory: ${{ github.workspace }}
         run: |
           mv .twa-standards "$RUNNER_TEMP/twa-standards"
           echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+          echo "REPORTS_DIR=$RUNNER_TEMP/docker-reports" >>"$GITHUB_ENV"
+
+      # Sobre el Dockerfile: no hace falta construir
+      - name: DKR-02 Hadolint
+        if: fromJSON(needs.config.outputs.severities)['DKR-02'] != 'off'
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DKR-02'] }}
+        run: '"$STANDARDS_DIR/scripts/check-dockerfile.sh" "$SEVERITY" "$DOCKERFILE"'
+
       # El settings.xml entra al build como secret: no queda en ninguna capa de la imagen
       - name: Maven settings
+        if: ${{ !cancelled() && env.NEEDS_IMAGE == 'true' }}
         env:
           PACKAGES_USER: ${{ github.repository_owner }}
           PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
         run: '"$STANDARDS_DIR/scripts/maven-settings.sh" >"$RUNNER_TEMP/settings.xml"'
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      # Solo valida que la imagen se construya; no se publica
+        if: ${{ !cancelled() && env.NEEDS_IMAGE == 'true' }}
+      # Se construye y se carga en el Docker del runner para escanearla; no se publica
       - id: build
         name: DKR-01 Build image
+        if: ${{ !cancelled() && env.NEEDS_IMAGE == 'true' }}
         continue-on-error: ${{ fromJSON(needs.config.outputs.severities)['DKR-01'] != 'block' }}
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ inputs.working-directory }}/${{ inputs.docker-context }}
           file: ${{ inputs.working-directory }}/${{ inputs.dockerfile }}
           push: false
+          load: true
+          tags: ${{ env.IMAGE }}
           secret-files: maven-settings=${{ runner.temp }}/settings.xml
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: DKR-01 Report
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.NEEDS_IMAGE == 'true' && fromJSON(needs.config.outputs.severities)['DKR-01'] != 'off' }}
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DKR-01'] }}
           OUTCOME: ${{ steps.build.outcome }}
@@ -548,6 +579,31 @@ jobs:
           else
             report DKR-01 "$SEVERITY" fail "La imagen no construye: ver el log del step anterior"
           fi
+
+      # Un escaneo de la imagen: vulnerabilidades del sistema operativo (DKR-03) y secretos en las capas (los lee DKR-04)
+      - name: DKR-03 Image vulnerabilities
+        if: >-
+          ${{ !cancelled() && steps.build.outcome == 'success' && (
+          fromJSON(needs.config.outputs.severities)['DKR-03'] != 'off'
+          || fromJSON(needs.config.outputs.severities)['DKR-04'] != 'off') }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DKR-03'] }}
+          PARAMS: ${{ needs.config.outputs.params }}
+        run: '"$STANDARDS_DIR/scripts/check-image.sh" "$SEVERITY" "$PARAMS" "$IMAGE"'
+      - name: DKR-04 TWA policies
+        if: ${{ !cancelled() && fromJSON(needs.config.outputs.severities)['DKR-04'] != 'off' }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DKR-04'] }}
+          PARAMS: ${{ needs.config.outputs.params }}
+        run: '"$STANDARDS_DIR/scripts/check-docker-policies.sh" "$SEVERITY" "$PARAMS" "$DOCKERFILE"'
+      - name: Upload Docker reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docker-reports
+          path: ${{ runner.temp }}/docker-reports
+          if-no-files-found: ignore
+          retention-days: 7
 
   repository:
     name: Repository

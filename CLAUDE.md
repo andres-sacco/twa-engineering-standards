@@ -17,16 +17,19 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
   servicio de prueba.
 - `config/spectral/twa.yaml`: las reglas de Spectral de API-02 (`twa-*`, las convenciones de las APIs de
   twa-platform). Una regla nueva va con su caso en `config/spectral/tests/invalida.yaml` (`make lint` lo verifica).
+- `config/conftest/dockerfile.rego`: las políticas TWA del Dockerfile de DKR-04 (`TWA-DOCKER-NN`). Una política
+  nueva va con su caso en `config/conftest/tests/` (`make lint` lo verifica).
 - `renovate/default.json`: el preset de Renovate de todos los repos TWA (`docs/dependencias.md`). Este repo lo usa en
   su `renovate.json`.
 - `scripts/`: `lib.sh` (`report`, versiones de herramientas), `read-config.sh`, `run-control.sh`, un script por control
   que no es un comando de Maven (`check-build-versions.sh`, `check-architecture.sh`, `check-architecture-version.sh`,
   `coverage.sh`, `check-workflows.sh`, `check-renovate.sh`, `check-secrets.sh`, `check-sast.sh`, `check-spotbugs.sh`,
   `sbom.sh`, `check-vulnerabilities.sh`, `check-licenses.sh`, `openapi-export.sh`, `check-openapi-lint.sh`,
-  `check-openapi-breaking.sh`), `maven-settings.sh` y `lint.sh`.
+  `check-openapi-breaking.sh`, `check-dockerfile.sh`, `check-image.sh`, `check-docker-policies.sh`), `maven-settings.sh`
+  y `lint.sh`.
 - `examples/sample-service/`: servicio mínimo con la forma de los servicios TWA, para probar los workflows. No es una
   plantilla.
-- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `seguridad.md` (SEC-*), `openapi.md` (API-*), `dependencias.md` (Renovate),
+- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `seguridad.md` (SEC-*), `openapi.md` (API-*), `docker.md` (DKR-*), `dependencias.md` (Renovate),
   `relevamiento.md`, `politica-de-severidades.md`, `versionado.md`.
 
 ## Reglas de trabajo

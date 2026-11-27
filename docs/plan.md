@@ -11,7 +11,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 3 | Arquitectura | En `java-ci.yml`: ARC-01 lee de los reportes de los tests qué reglas corrieron y cuáles rompen (con su id); ARC-02 exige la versión mínima de la librería. No define reglas | twa-layered-rules / twa-hexagonal-rules, pom efectivo | Hecha |
 | 4 | Seguridad | Job `Security` en `java-ci.yml`: secretos en archivos y commits, SAST, SBOM, vulnerabilidades y licencias sobre el SBOM. Ver [seguridad](seguridad.md) | Gitleaks, Semgrep CE, SpotBugs + FindSecBugs, CycloneDX, Trivy. Sin OSV-Scanner ni SonarQube | Hecha |
 | 5 | OpenAPI | En `java-ci.yml`: la spec que exporta el `OpenApiIT` de cada servicio, Spectral con las reglas `twa-*` y oasdiff contra la rama principal (se aprueba con la etiqueta `api-breaking-change`). Ver [openapi](openapi.md) | springdoc + OpenApiIT, Spectral, oasdiff; Schemathesis más adelante | Hecha |
-| 6 | Docker | Lint del Dockerfile, escaneo de la imagen y políticas propias | Hadolint, Trivy, Dockle, Conftest; Cosign y Syft cuando se publiquen imágenes | — |
+| 6 | Docker | En el job `Docker image`: Hadolint, la imagen construida y cargada en el runner, Trivy sobre los paquetes del sistema operativo y los secretos de las capas, y las políticas TWA con Conftest. Ver [docker](docker.md) | Hadolint, Trivy, Conftest. Sin Dockle; Cosign y Syft cuando se publiquen imágenes | Hecha |
 | 7 | Dependencias | Preset central de Renovate (grupos, 3 días de espera, actions e imágenes por digest, automerge de patch con CI verde), Renovate self-hosted en `renovate.yml` y DEP-01. Ver [dependencias](dependencias.md) | Renovate, renovate-config-validator | Hecha |
 | 8 | Reportes | Resumen por PR, SARIF, escaneo nocturno de todos los repos y tablero central | `$GITHUB_STEP_SUMMARY`, SARIF, Dependency-Track o DefectDojo | — |
 | 9 | Despliegue | catalog como piloto; después exchange-rates, proveedores, search, reservations y las librerías. `warn` → `block` según la política | Branch protection, CODEOWNERS | — |
@@ -81,6 +81,17 @@ twa-engineering-standards/
 * **API-03 contra la cache**, como TST-02: la spec de la rama principal se guarda en cada push. Un cambio incompatible
   a propósito se aprueba con la etiqueta `api-breaking-change`.
 * Un repo apaga una regla en `params.disabledRules` de API-02, con la razón; no con un ruleset propio.
+
+## Decisiones de la etapa 6
+
+* **Sin Dockle:** no tiene releases desde enero de 2025. Sus chequeos los cubren Conftest y el escaneo de secretos de
+  Trivy sobre las capas.
+* **DKR-03 solo mira el sistema operativo** (`--pkg-types os`): las dependencias Java son SEC-03, sobre el SBOM. Así
+  una vulnerabilidad no se reporta dos veces.
+* **Las políticas TWA miran el Dockerfile** (Conftest, `config/conftest/dockerfile.rego`): el mensaje dice qué
+  instrucción cambiar y la política se prueba en `make lint` sin construir. Los secretos se buscan en la imagen.
+* **La imagen se carga en el runner** (`load: true`) para escanearla; sigue sin publicarse.
+* Un repo exceptúa una política en `params.exceptions` de DKR-04, con la razón.
 
 ## Decisiones de la etapa 7
 
