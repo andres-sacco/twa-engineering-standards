@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # make lint: valida los workflows, el schema de .twa-standards.yml y el catálogo de controles. Corre igual en local y
 # en CI. Necesita Docker (actionlint), yq (mikefarah, viene en los runners de GitHub) y uvx o pipx (zizmor,
-# check-jsonschema, shellcheck), con las versiones fijadas acá.
+# check-jsonschema, shellcheck) y npx (renovate-config-validator), con las versiones fijadas acá.
 set -euo pipefail
 
+# renovate: datasource=docker depName=rhysd/actionlint
 ACTIONLINT_VERSION="1.7.12"
+# renovate: datasource=pypi depName=shellcheck-py
 SHELLCHECK_VERSION="0.11.0.1"
+# renovate: datasource=npm depName=renovate
+RENOVATE_VERSION="44.236.5"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -51,6 +55,17 @@ for f in schema/tests/invalid/*.yml; do
   if jsonschema --schemafile "$SCHEMA" "$f" >/dev/null 2>&1; then fail "debería ser inválido: $f"; else ok "inválido: $f"; fi
 done
 
+section "Renovate ${RENOVATE_VERSION}: preset y renovate.json"
+if npx --yes --quiet --package "renovate@${RENOVATE_VERSION}" -- renovate-config-validator --strict --no-global \
+  renovate/default.json renovate.json >/dev/null 2>&1; then
+  ok "válidos como configuración de repo"
+else
+  fail "renovate-config-validator encontró problemas (correrlo a mano para ver el detalle)"
+fi
+if [[ "$(grep -oE 'renovate-version: \S+' .github/workflows/renovate.yml | cut -d' ' -f2)" != "$RENOVATE_VERSION" ]]; then
+  fail "renovate.yml y lint.sh usan versiones distintas de Renovate"
+fi
+
 section "Catálogo de controles (${CATALOG})"
 mapfile -t ids < <(yq '.controls | keys | .[]' "$CATALOG")
 for id in "${ids[@]}"; do
@@ -64,7 +79,7 @@ for id in "${ids[@]}"; do
     fail "$id: appliesTo solo admite service y library"
   fi
 done
-[[ "$(yq '.implementedStage' "$CATALOG")" =~ ^[0-9]+$ ]] || fail "implementedStage tiene que ser un número"
+[[ "$(yq '.implementedStages | type' "$CATALOG")" == "!!seq" ]] || fail "implementedStages tiene que ser una lista de etapas"
 ok "${#ids[@]} controles"
 
 section "Política de severidades contra el catálogo"

@@ -12,7 +12,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 4 | Seguridad | Secretos, SAST, vulnerabilidades, SBOM, licencias | Gitleaks (CLI), Semgrep CE, SpotBugs + FindSecBugs, Trivy, OSV-Scanner, CycloneDX | — |
 | 5 | OpenAPI | Spec exportada en el build, lint con las convenciones de la plataforma, cambios incompatibles contra `main` | springdoc-openapi-maven-plugin, Spectral, oasdiff; Schemathesis más adelante | — |
 | 6 | Docker | Lint del Dockerfile, escaneo de la imagen y políticas propias | Hadolint, Trivy, Dockle, Conftest; Cosign y Syft cuando se publiquen imágenes | — |
-| 7 | Dependencias | Preset central de Renovate (grupos, actions por SHA, automerge de patch con CI verde) | Renovate | — |
+| 7 | Dependencias | Preset central de Renovate (grupos, 3 días de espera, actions e imágenes por digest, automerge de patch con CI verde), Renovate self-hosted en `renovate.yml` y DEP-01. Ver [dependencias](dependencias.md) | Renovate, renovate-config-validator | Hecha |
 | 8 | Reportes | Resumen por PR, SARIF, escaneo nocturno de todos los repos y tablero central | `$GITHUB_STEP_SUMMARY`, SARIF, Dependency-Track o DefectDojo | — |
 | 9 | Despliegue | catalog como piloto; después exchange-rates, proveedores, search, reservations y las librerías. `warn` → `block` según la política | Branch protection, CODEOWNERS | — |
 
@@ -54,8 +54,19 @@ twa-engineering-standards/
 * **`architecture: layered | hexagonal`** en `.twa-standards.yml` (default `layered`, ADR-0001) elige la librería.
 * El servicio de prueba usa `twa-layered-rules`: el CI de este repo necesita el secret `PACKAGES_TOKEN`.
 
+## Decisiones de la etapa 7
+
+* **Renovate self-hosted** en un workflow de este repo, no la GitHub App: todo open source y corriendo en Actions,
+  como pide el ADR-0013. La App queda como alternativa (docs/dependencias.md).
+* **Solo los repos con `renovate.json`** (`RENOVATE_REQUIRE_CONFIG=required`): la adopción es repo por repo en la
+  etapa 9, no un PR de onboarding en cada `twa-*`.
+* **3 días de espera** para versiones de terceros (cadena de suministro), salvo seguridad, librerías TWA e imágenes.
+* **Automerge solo de patch de terceros e imágenes base**, y solo si la rama exige `ci / twa-standards`.
+* Las versiones fijadas en scripts y workflows llevan un comentario `# renovate:` y las actualiza un `customManager`
+  del preset: este repo se mantiene con su propio preset.
+* Las etapas 4 a 6 siguen pendientes: `implementedStages` del catálogo reemplaza a un número de etapa.
+
 ## A validar
 
 * Visibilidad de los repos: si son privados, Code Scanning (SARIF) necesita GitHub Advanced Security.
-* Renovate como GitHub App o self-hosted.
 * Dónde va el tablero de la etapa 8: uno nuevo, `twa-data` o Grafana (`twa-observability`).

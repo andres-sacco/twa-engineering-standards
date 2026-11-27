@@ -11,9 +11,10 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 
 ## Estado
 
-Etapa 3 terminada: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura, imagen y zizmor
-(controles `BLD-*`, `TST-*`, `ARC-*`, `DKR-01` y `WFL-01`). Ningún repo lo usa todavía: el piloto con catalog es la
-etapa 9.
+Etapas 0 a 3 y 7 terminadas: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura, imagen,
+zizmor y el chequeo de Renovate (controles `BLD-*`, `TST-*`, `ARC-*`, `DKR-01`, `WFL-01` y `DEP-01`), y el preset de
+Renovate con su workflow self-hosted mantiene las dependencias. Faltan seguridad, OpenAPI y Docker (etapas 4 a 6).
+Ningún repo lo usa todavía: el piloto con catalog es la etapa 9.
 
 ## Cómo se usa
 
@@ -47,6 +48,7 @@ make sample-image   # construye su imagen
 | Documento | Qué responde |
 |---|---|
 | [docs/uso.md](docs/uso.md) | Cómo un repo adopta `java-ci.yml`: su `ci.yml`, inputs, qué corre y qué cambia respecto del CI actual |
+| [docs/dependencias.md](docs/dependencias.md) | El preset de Renovate: cómo lo adopta un repo, grupos, automerge, Renovate self-hosted y sus secrets |
 | [docs/plan.md](docs/plan.md) | Las etapas, qué entrega cada una y con qué herramientas |
 | [docs/relevamiento.md](docs/relevamiento.md) | Cómo se construyen y validan hoy los repos TWA, y qué falta |
 | [config/controls.yml](config/controls.yml) | El catálogo de controles: id, severidad por defecto, herramienta y etapa |

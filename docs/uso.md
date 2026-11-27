@@ -58,8 +58,11 @@ jobs:
 ```
 
 * **Por SHA, con la versión en el comentario**, como cualquier action: así el repo cumple su propio `WFL-01` (zizmor
-  marca como `unpinned-uses` una referencia por tag). Renovate actualiza el SHA y el comentario (etapa 7); hasta
-  entonces, a mano: el SHA de un release es el del tag `vX.Y.Z` (`git ls-remote --tags` del repo).
+  marca como `unpinned-uses` una referencia por tag). Renovate actualiza el SHA y el comentario con el preset de
+  [dependencias](dependencias.md) (grupo `twa-engineering-standards`, sin automerge). A mano: el SHA de un release es
+  el del tag `vX.Y.Z` (`git ls-remote --tags` del repo).
+* Un `renovate.json` que extiende el preset (`DEP-01`, ver [dependencias](dependencias.md)), y sin
+  `.github/dependabot.yml`.
 * **El secret explícito**, no `secrets: inherit`: el workflow solo recibe lo que necesita.
 * `.github/maven-settings.sh` se borra: el `settings.xml` lo arma `scripts/maven-settings.sh` de este repo.
 * El check que se exige en la protección de `main` es **`ci / twa-standards`**: resume a todos los jobs y falla solo
@@ -87,7 +90,7 @@ build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
 | `Code style` | `BLD-01` | `mvn spotless:check` |
 | `Build and test` | `BLD-03`, `ARC-02`, `BLD-04`, `BLD-02`, `ARC-01`, `TST-01`, `TST-02` | Versiones de Java y Maven exigidas por el enforcer del pom; versión mínima de la librería de reglas; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; qué reglas corrieron y cuáles rompen; cobertura de líneas contra el mínimo y contra la rama principal. Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
 | `Docker image` | `DKR-01` | Construye la imagen con el `settings.xml` como secret; no la publica |
-| `Workflows` | `WFL-01` | zizmor sobre `.github/workflows` |
+| `Repository` | `WFL-01`, `DEP-01` | zizmor sobre `.github/workflows`; `renovate.json` con el preset y sin Dependabot |
 | `twa-standards` | — | Falla si falló algún job (un control en `block`) |
 
 Cada job deja en su resumen una tabla con el resultado de cada control, y los que fallan en `warn` quedan como

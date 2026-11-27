@@ -8,9 +8,12 @@
 export LC_NUMERIC=C
 
 # Versiones fijadas de las herramientas que se corren con uvx o pipx (las usan los scripts que cargan este archivo)
+# Renovate las actualiza por el comentario de la línea anterior (renovate/default.json, customManagers)
 # shellcheck disable=SC2034
+# renovate: datasource=pypi depName=check-jsonschema
 CHECK_JSONSCHEMA_VERSION="0.39.0"
 # shellcheck disable=SC2034
+# renovate: datasource=pypi depName=zizmor
 ZIZMOR_VERSION="1.33.1"
 
 STANDARDS_DIR="${STANDARDS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
