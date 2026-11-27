@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.1.0...v0.1.1) (2026-11-27)
+
+
+### Correcciones
+
+* mover los tags vX y vX.Y buscando el tag exacto ([a4cd614](https://github.com/andres-sacco/twa-engineering-standards/commit/a4cd614e8220a4e9728aad67cf3074a277853cb3))
+* mover los tags vX y vX.Y buscando el tag exacto ([febe8a8](https://github.com/andres-sacco/twa-engineering-standards/commit/febe8a8ab20eede1943d0c5d09f4f06f638fcacc))
+
 ## 0.1.0 (2026-11-27)
 
 
