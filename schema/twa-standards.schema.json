@@ -15,6 +15,10 @@
       "description": "service: un servicio Spring Boot con Dockerfile y API. library: una librería que se publica en GitHub Packages.",
       "enum": ["service", "library"]
     },
+    "architecture": {
+      "description": "Solo servicios. layered: twa-layered-rules (ADR-0001, el default). hexagonal: twa-hexagonal-rules.",
+      "enum": ["layered", "hexagonal"]
+    },
     "java": {
       "description": "Versión de Java con la que se compila. Si falta, la del workflow (25 para servicios).",
       "type": "string",

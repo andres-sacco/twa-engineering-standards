@@ -10,12 +10,12 @@ class GreetingServiceTest {
 
     @Test
     void greetsByName() {
-        assertThat(service.greet("  Ana ").message()).isEqualTo("Hola, Ana");
+        assertThat(service.greet("  Ana ")).isEqualTo("Hola, Ana");
     }
 
     @Test
     void greetsTwaWithoutName() {
-        assertThat(service.greet(null).message()).isEqualTo("Hola, TWA");
-        assertThat(service.greet(" ").message()).isEqualTo("Hola, TWA");
+        assertThat(service.greet(null)).isEqualTo("Hola, TWA");
+        assertThat(service.greet(" ")).isEqualTo("Hola, TWA");
     }
 }

@@ -1,4 +1,4 @@
-package com.twa.sample.controller;
+package com.twa.sample.web;
 
 import com.twa.sample.dto.GreetingResponse;
 import com.twa.sample.service.GreetingService;
@@ -17,6 +17,6 @@ public class GreetingController {
 
     @GetMapping("/greetings")
     public GreetingResponse greet(@RequestParam(required = false) String name) {
-        return greetingService.greet(name);
+        return new GreetingResponse(greetingService.greet(name));
     }
 }

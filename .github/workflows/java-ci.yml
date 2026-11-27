@@ -4,7 +4,8 @@ name: TWA Java CI
 # Java y severidad de cada control) y corre los controles que le tocan. Cada control falla el check solo si su
 # severidad es block (docs/politica-de-severidades.md). Uso y migración: docs/uso.md.
 #
-# Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, TST-01, TST-02) | image (DKR-01) | workflows (WFL-01)
+# Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02) | image (DKR-01) |
+# workflows (WFL-01)
 # → twa-standards. El
 # último resume a los demás: es el check que se exige en la protección de la rama.
 on:
@@ -62,6 +63,7 @@ jobs:
       contents: read
     outputs:
       type: ${{ steps.config.outputs.type }}
+      architecture: ${{ steps.config.outputs.architecture }}
       java: ${{ steps.config.outputs.java }}
       severities: ${{ steps.config.outputs.severities }}
       params: ${{ steps.config.outputs.params }}
@@ -175,6 +177,16 @@ jobs:
           JAVA: ${{ needs.config.outputs.java }}
         run: '"$STANDARDS_DIR/scripts/check-build-versions.sh" "$SEVERITY" "$JAVA"'
 
+      # Lee el pom efectivo: no compila
+      - name: ARC-02 Architecture rules version
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['ARC-02'] }}
+          ARCHITECTURE: ${{ needs.config.outputs.architecture }}
+          PARAMS: ${{ needs.config.outputs.params }}
+        run: |
+          # shellcheck disable=SC2086 # MAVEN_ARGS son varios argumentos
+          "$STANDARDS_DIR/scripts/check-architecture-version.sh" "$SEVERITY" "$ARCHITECTURE" "$PARAMS" $MAVEN_ARGS
+
       - name: BLD-04 Dependency convergence
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['BLD-04'] }}
@@ -202,6 +214,14 @@ jobs:
           "$STANDARDS_DIR/scripts/run-control.sh" BLD-02 "$SEVERITY" \
             "Falló la compilación o algún test: ver el log de este step y el artifact test-reports" \
             -- mvn -B -ntp "${goals[@]}" -Dspotless.check.skip=true $MAVEN_ARGS
+      # Las reglas de ArchUnit corren dentro de verify (perfil architecture-rules de cada repo): acá se leen sus
+      # resultados en los reportes de Surefire
+      - name: ARC-01 Architecture rules
+        if: ${{ !cancelled() && (steps.verify.outputs.result == 'ok' || steps.verify.outputs.result == 'fail') }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['ARC-01'] }}
+          VERIFY_RESULT: ${{ steps.verify.outputs.result }}
+        run: '"$STANDARDS_DIR/scripts/check-architecture.sh" "$SEVERITY" "$VERIFY_RESULT"'
       - name: Upload test reports
         if: steps.verify.outputs.result == 'fail'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

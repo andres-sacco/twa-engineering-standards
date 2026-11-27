@@ -12,6 +12,7 @@ En la raíz del repo (o en `working-directory`). Lo mínimo:
 version: 1
 type: service        # service | library
 java: "25"           # default 25; las librerías declaran la suya ("11", "17")
+architecture: layered  # solo servicios: layered (twa-layered-rules, el default) | hexagonal (twa-hexagonal-rules)
 ```
 
 Solo se agregan los controles que cambian su default (`config/controls.yml`). Bajar una severidad necesita `reason`:
@@ -84,7 +85,7 @@ build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
 |---|---|---|
 | `Config` | — | Valida `.twa-standards.yml` contra el schema, lo combina con los defaults y deja la tabla en el resumen |
 | `Code style` | `BLD-01` | `mvn spotless:check` |
-| `Build and test` | `BLD-03`, `BLD-04`, `BLD-02`, `TST-01`, `TST-02` | Versiones de Java y Maven exigidas por el enforcer del pom; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; cobertura de líneas contra el mínimo y contra la rama principal. Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
+| `Build and test` | `BLD-03`, `ARC-02`, `BLD-04`, `BLD-02`, `ARC-01`, `TST-01`, `TST-02` | Versiones de Java y Maven exigidas por el enforcer del pom; versión mínima de la librería de reglas; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; qué reglas corrieron y cuáles rompen; cobertura de líneas contra el mínimo y contra la rama principal. Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
 | `Docker image` | `DKR-01` | Construye la imagen con el `settings.xml` como secret; no la publica |
 | `Workflows` | `WFL-01` | zizmor sobre `.github/workflows` |
 | `twa-standards` | — | Falla si falló algún job (un control en `block`) |
@@ -101,6 +102,19 @@ anotación (⚠️) sin fallar el check.
 | El enforcer del pom (si está) | Además, `BLD-03` exige que esté y `BLD-04` corre convergencia de dependencias |
 | Actions por tag | Por SHA (y `WFL-01` lo verifica en el repo) |
 | Dos formas de armar el `settings.xml` | Una sola, con los tres servers de GitHub Packages |
+
+## Reglas de arquitectura (ARC-01, ARC-02)
+
+Las reglas son las de [twa-layered-rules](https://github.com/andres-sacco/twa-layered-rules) (o twa-hexagonal-rules):
+este repo no define ninguna. Cada servicio las corre en su `ArchitectureTest`, dentro de `mvn verify`, y
+`java-ci.yml` lee el resultado:
+
+* **ARC-01** lista los ids de las reglas que rompen (`LAY-06 (catalog-service)`) y falla si no corrió ninguna. Una
+  regla rota también hace fallar `mvn verify` (BLD-02): bajar la severidad de ARC-01 no evita eso. Para la deuda que
+  ya existe se congela la regla con `FreezingArchRule` (README de la librería, § Congelar la deuda); ARC-01 informa
+  cuántas violaciones quedan congeladas.
+* **ARC-02** exige la versión mínima de la librería (`params.minVersions` de ARC-02 en `config/controls.yml`, hoy
+  0.1.0). La mínima sube cuando una major de la librería vuelve obligatoria una regla.
 
 ## Cobertura contra la rama principal (TST-02)
 

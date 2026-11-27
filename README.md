@@ -11,8 +11,9 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 
 ## Estado
 
-Etapa 2 terminada: `java-ci.yml` corre build, tests, cobertura, enforcer, imagen y zizmor (controles `BLD-*`,
-`TST-*`, `DKR-01` y `WFL-01`). Ningún repo lo usa todavía: el piloto con catalog es la etapa 9.
+Etapa 3 terminada: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura, imagen y zizmor
+(controles `BLD-*`, `TST-*`, `ARC-*`, `DKR-01` y `WFL-01`). Ningún repo lo usa todavía: el piloto con catalog es la
+etapa 9.
 
 ## Cómo se usa
 

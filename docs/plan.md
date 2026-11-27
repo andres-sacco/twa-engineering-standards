@@ -8,7 +8,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 0 | Decisión y relevamiento | ADR-0013, [relevamiento](relevamiento.md), [política de severidades](politica-de-severidades.md) | — | Hecha |
 | 1 | Base del repo | Estructura, JSON Schema de `.twa-standards.yml`, versionado semver con tags móviles ([versionado](versionado.md)), CI propio, `examples/sample-service` | release-please, actionlint, zizmor, check-jsonschema, shellcheck | Hecha |
 | 2 | Build, estilo y tests | `java-ci.yml` (un reutilizable para servicios y librerías) equivalente al `ci.yml` actual, más enforcer, cobertura y zizmor sobre los workflows del repo. Ver [uso](uso.md) | Maven Enforcer, Spotless, Surefire/Failsafe, JaCoCo, action-junit-report, zizmor. Sin PIT: mutation testing consume demasiados recursos para el CI | Hecha |
-| 3 | Arquitectura | `architecture.yml`: corre el perfil `architecture-rules` y exige la versión mínima de la librería. No define reglas | twa-layered-rules / twa-hexagonal-rules, Maven Enforcer | — |
+| 3 | Arquitectura | En `java-ci.yml`: ARC-01 lee de los reportes de los tests qué reglas corrieron y cuáles rompen (con su id); ARC-02 exige la versión mínima de la librería. No define reglas | twa-layered-rules / twa-hexagonal-rules, pom efectivo | Hecha |
 | 4 | Seguridad | Secretos, SAST, vulnerabilidades, SBOM, licencias | Gitleaks (CLI), Semgrep CE, SpotBugs + FindSecBugs, Trivy, OSV-Scanner, CycloneDX | — |
 | 5 | OpenAPI | Spec exportada en el build, lint con las convenciones de la plataforma, cambios incompatibles contra `main` | springdoc-openapi-maven-plugin, Spectral, oasdiff; Schemathesis más adelante | — |
 | 6 | Docker | Lint del Dockerfile, escaneo de la imagen y políticas propias | Hadolint, Trivy, Dockle, Conftest; Cosign y Syft cuando se publiquen imágenes | — |
@@ -39,6 +39,20 @@ twa-engineering-standards/
   probar en el PR que la cambia.
 * **Los plugins se agregan por línea de comandos** (JaCoCo, enforcer): no hace falta tocar el pom de ningún repo.
 * **Sin PIT**: el mutation testing quedó fuera por el consumo de recursos.
+
+## Decisiones de la etapa 3
+
+* **Las reglas no se corren dos veces:** ya corren en `mvn verify` (el `ArchitectureTest` de cada servicio, perfil
+  `architecture-rules`). ARC-01 lee los reportes de Surefire: cada caso de ArchUnit se llama
+  `TwaCoreRules > TwaLayerRules > LAY_01`, de ahí sale el id. Un repo sin reglas que corran (sin test, sin dependencia
+  o con `-DskipArchitectureRules`) falla ARC-01 aunque los tests pasen.
+* **ARC-01 no reemplaza a BLD-02:** una regla rota hace fallar `mvn verify`, así que BLD-02 falla igual. Para no
+  bloquear por deuda existente se usa el mecanismo de la librería (`FreezingArchRule`), no la severidad; ARC-01 informa
+  cuántas violaciones quedan congeladas en `archunit_store`.
+* **La versión mínima vive en el catálogo** (`params.minVersions` de ARC-02), no en el pom de cada repo. Los params
+  por defecto de todos los controles pasaron al catálogo: `read-config.sh` combina encima los del repo.
+* **`architecture: layered | hexagonal`** en `.twa-standards.yml` (default `layered`, ADR-0001) elige la librería.
+* El servicio de prueba usa `twa-layered-rules`: el CI de este repo necesita el secret `PACKAGES_TOKEN`.
 
 ## A validar
 

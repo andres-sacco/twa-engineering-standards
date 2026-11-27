@@ -1,5 +1,6 @@
 version: 1
 type: library
+architecture: layered
 java: "17"
 controls:
   TST-01:

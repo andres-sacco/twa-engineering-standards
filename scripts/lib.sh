@@ -49,7 +49,7 @@ summary_header() {
   fi
 }
 
-# report ID SEVERIDAD ok|fail "detalle"
+# report ID SEVERIDAD ok|fail|skip "detalle". skip: el control no se pudo evaluar por otra falla (no falla el step)
 report() {
   local id="$1" severity="$2" result="$3" detail="$4" name icon
   name="$(control_name "$id")"
@@ -57,6 +57,9 @@ report() {
   if [[ "$result" == "ok" ]]; then
     icon="✅"
     echo "[$id] ${name}: OK. ${detail}"
+  elif [[ "$result" == "skip" ]]; then
+    icon="⏭️"
+    echo "[$id] ${name}: sin evaluar. ${detail}"
   elif [[ "$severity" == "block" ]]; then
     icon="❌"
     echo "::error title=${id} ${name}::${detail}"
@@ -65,7 +68,7 @@ report() {
     echo "::warning title=${id} ${name}::${detail}"
   fi
   summary "| \`${id}\` ${name} | ${severity} | ${icon} | ${detail} |"
-  [[ "$result" == "ok" || "$severity" != "block" ]]
+  [[ "$result" != "fail" || "$severity" != "block" ]]
 }
 
 # Escribe una salida del step (en local, a la consola)

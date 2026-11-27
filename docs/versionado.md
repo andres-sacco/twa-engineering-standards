@@ -43,4 +43,4 @@ incompatible.
 
 * El PR de release lo abre el `GITHUB_TOKEN`, y un PR abierto con ese token **no dispara el CI**. Si se quiere CI en
   ese PR hace falta un token de una GitHub App o un PAT (secret aparte).
-* Que la rama `main` tenga protección con el check `Lint` y `Sample service` requeridos.
+* Que la rama `main` tenga protección con el check `Lint` y `Sample service / twa-standards` requeridos.

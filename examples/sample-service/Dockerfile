@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 
 # Misma forma que el Dockerfile de los servicios TWA. El settings.xml de GitHub Packages es opcional (required=false):
-# el sample no lo necesita hoy, pero el workflow lo pasa igual que a los servicios
+# la imagen no corre los tests ni el perfil architecture-rules, así que no baja twa-layered-rules
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /workspace
 COPY . .
 RUN --mount=type=cache,target=/root/.m2/repository \
     --mount=type=secret,id=maven-settings,target=/root/.m2/settings.xml,required=false \
-    mvn -B -ntp package -Dmaven.test.skip=true -Dspotless.check.skip=true \
+    mvn -B -ntp package -Dmaven.test.skip=true -DskipArchitectureRules -Dspotless.check.skip=true \
  && cp target/sample-service-*.jar application.jar \
  && java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 

@@ -40,3 +40,6 @@ jobs:
       standards-ref: ${{ github.event.pull_request.head.sha || github.sha }}
       artifact-name: sample-service
       artifact-path: target/sample-service-*.jar
+    # El sample usa twa-layered-rules, que está en GitHub Packages
+    secrets:
+      PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}

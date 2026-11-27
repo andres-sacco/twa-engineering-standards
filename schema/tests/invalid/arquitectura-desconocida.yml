@@ -1,0 +1,4 @@
+# architecture solo admite layered y hexagonal
+version: 1
+type: service
+architecture: clean
