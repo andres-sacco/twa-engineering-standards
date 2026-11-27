@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SEC-02: SpotBugs solo reporta la categoría SECURITY (los detectores de FindSecBugs y los de seguridad propios).
+     El resto de las categorías (estilo, rendimiento…) no son de esta etapa. -->
+<FindBugsFilter>
+  <Match>
+    <Bug category="SECURITY"/>
+  </Match>
+</FindBugsFilter>

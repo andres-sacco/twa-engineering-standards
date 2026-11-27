@@ -6,7 +6,7 @@
 # stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa que no está en implementedStages
 # se pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
 # se combinan encima.
-implementedStages: [1, 2, 3, 7]
+implementedStages: [1, 2, 3, 4, 7]
 controls:
   BLD-01:
     name: Formato del código
@@ -78,12 +78,17 @@ controls:
     severity: warn
     stage: 4
     appliesTo: [service, library]
+    params:
+      # Reglas de Semgrep (registry o archivos del repo). Se excluyen los tests (src/test)
+      semgrepConfigs: [p/java]
   SEC-03:
     name: Vulnerabilidades CRITICAL/HIGH con versión corregida en dependencias
-    tool: Trivy (fs), OSV-Scanner
+    tool: Trivy (sobre el SBOM)
     severity: warn
     stage: 4
     appliesTo: [service, library]
+    params:
+      severities: [CRITICAL, HIGH]
   SEC-04:
     name: SBOM generado y publicado como artifact
     tool: CycloneDX Maven plugin
@@ -92,10 +97,39 @@ controls:
     appliesTo: [service, library]
   SEC-05:
     name: Licencias de dependencias fuera de la lista permitida
-    tool: Trivy (license)
+    tool: SBOM (CycloneDX) contra la lista permitida
     severity: warn
     stage: 4
     appliesTo: [service, library]
+    params:
+      # Ids SPDX permitidos. Una dependencia con varias licencias (doble licencia) pasa si al menos una está acá
+      allowedLicenses:
+        - Apache-2.0
+        - MIT
+        - MIT-0
+        - BSD-2-Clause
+        - BSD-3-Clause
+        - 0BSD
+        - ISC
+        - EPL-1.0
+        - EPL-2.0
+        - EDL-1.0
+        - MPL-2.0
+        - CDDL-1.0
+        - CDDL-1.1
+        - UPL-1.0
+        - BSL-1.0
+        - Zlib
+        - CC0-1.0
+        - Unlicense
+        - GPL-2.0-with-classpath-exception
+        - Classpath-exception-2.0
+      # Lo que agrega un repo sin repetir la lista: más ids SPDX y dependencias puntuales (group:artifact), con la razón
+      # en un comentario de su .twa-standards.yml
+      extraAllowedLicenses: []
+      allowedComponents: []
+      # Grupos propios: no se les exige licencia
+      ownGroups: [com.twa]
   API-01:
     name: La spec OpenAPI se exporta en el build
     tool: springdoc-openapi-maven-plugin

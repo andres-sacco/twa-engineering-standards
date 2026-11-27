@@ -4,10 +4,9 @@ name: TWA Java CI
 # Java y severidad de cada control) y corre los controles que le tocan. Cada control falla el check solo si su
 # severidad es block (docs/politica-de-severidades.md). Uso y migración: docs/uso.md.
 #
-# Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02) | image (DKR-01) |
-# repository (WFL-01, DEP-01)
-# → twa-standards. El
-# último resume a los demás: es el check que se exige en la protección de la rama.
+# Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02, SEC-02 SpotBugs) |
+# security (SEC-01, SEC-02 Semgrep, SEC-03, SEC-04, SEC-05) | image (DKR-01) | repository (WFL-01, DEP-01)
+# → twa-standards. El último resume a los demás: es el check que se exige en la protección de la rama.
 on:
   workflow_call:
     inputs:
@@ -56,6 +55,14 @@ env:
   JACOCO_VERSION: 0.8.16
   # renovate: datasource=maven depName=org.apache.maven.plugins:maven-enforcer-plugin
   ENFORCER_VERSION: 3.7.0
+  # renovate: datasource=maven depName=org.apache.maven.plugins:maven-dependency-plugin
+  DEPENDENCY_VERSION: 3.11.0
+  # renovate: datasource=maven depName=com.github.spotbugs:spotbugs-maven-plugin
+  SPOTBUGS_VERSION: 4.10.5.0
+  # renovate: datasource=maven depName=com.h3xstream.findsecbugs:findsecbugs-plugin
+  FINDSECBUGS_VERSION: 1.14.0
+  # renovate: datasource=maven depName=org.cyclonedx:cyclonedx-maven-plugin
+  CYCLONEDX_VERSION: 2.9.3
 
 jobs:
   config:
@@ -292,6 +299,146 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      # SpotBugs analiza el bytecode: corre acá, sobre lo que ya compiló verify. Semgrep (la otra mitad de SEC-02) corre
+      # en el job security. Va al final para que un hallazgo en block no saltee los pasos de cobertura
+      - name: SEC-02 SpotBugs + FindSecBugs
+        if: steps.verify.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['SEC-02'] != 'off'
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['SEC-02'] }}
+          REPORTS_DIR: ${{ runner.temp }}/spotbugs-reports
+        run: |
+          # shellcheck disable=SC2086 # MAVEN_ARGS son varios argumentos
+          "$STANDARDS_DIR/scripts/check-spotbugs.sh" "$SEVERITY" $MAVEN_ARGS
+      - name: Upload SpotBugs reports
+        if: ${{ !cancelled() && steps.verify.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['SEC-02'] != 'off' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-reports-spotbugs
+          path: ${{ runner.temp }}/spotbugs-reports
+          if-no-files-found: ignore
+          retention-days: 7
+
+  security:
+    name: Security
+    needs: config
+    if: >-
+      fromJSON(needs.config.outputs.severities)['SEC-01'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['SEC-02'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['SEC-03'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['SEC-04'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['SEC-05'] != 'off'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      MAVEN_ARGS: ${{ inputs.maven-args }}
+      # SEC-03 y SEC-05 leen el SBOM: se genera aunque SEC-04 esté en off
+      NEEDS_SBOM: >-
+        ${{ fromJSON(needs.config.outputs.severities)['SEC-03'] != 'off'
+        || fromJSON(needs.config.outputs.severities)['SEC-04'] != 'off'
+        || fromJSON(needs.config.outputs.severities)['SEC-05'] != 'off' }}
+    steps:
+      # Todo el historial: SEC-01 recorre los commits del PR o del push
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: andres-sacco/twa-engineering-standards
+          ref: ${{ inputs.standards-ref }}
+          path: .twa-standards
+          persist-credentials: false
+      - name: Standards
+        working-directory: ${{ github.workspace }}
+        run: |
+          mv .twa-standards "$RUNNER_TEMP/twa-standards"
+          echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
+          echo "REPORTS_DIR=$RUNNER_TEMP/security-reports" >>"$GITHUB_ENV"
+
+      # En la raíz del repo, no en working-directory: un secreto en cualquier carpeta cuenta
+      - name: SEC-01 Gitleaks
+        if: fromJSON(needs.config.outputs.severities)['SEC-01'] != 'off'
+        working-directory: ${{ github.workspace }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['SEC-01'] }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          range=""
+          if [[ -n "$PR_BASE" && -n "$PR_HEAD" ]]; then
+            range="${PR_BASE}..${PR_HEAD}"
+          elif [[ -n "$PUSH_BEFORE" && ! "$PUSH_BEFORE" =~ ^0+$ ]]; then
+            range="${PUSH_BEFORE}..${GITHUB_SHA}"
+          fi
+          "$STANDARDS_DIR/scripts/check-secrets.sh" "$SEVERITY" "$range"
+
+      - name: SEC-02 Semgrep
+        if: ${{ !cancelled() && fromJSON(needs.config.outputs.severities)['SEC-02'] != 'off' }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['SEC-02'] }}
+          PARAMS: ${{ needs.config.outputs.params }}
+        run: '"$STANDARDS_DIR/scripts/check-sast.sh" "$SEVERITY" "$PARAMS"'
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        if: ${{ !cancelled() && env.NEEDS_SBOM == 'true' }}
+        with:
+          distribution: temurin
+          java-version: ${{ needs.config.outputs.java }}
+          cache: maven
+          cache-dependency-path: ${{ inputs.working-directory }}/**/pom.xml
+      - name: Maven settings
+        if: ${{ !cancelled() && env.NEEDS_SBOM == 'true' }}
+        env:
+          PACKAGES_USER: ${{ github.repository_owner }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+        run: mkdir -p ~/.m2 && "$STANDARDS_DIR/scripts/maven-settings.sh" >~/.m2/settings.xml
+      - id: sbom
+        name: SEC-04 SBOM
+        if: ${{ !cancelled() && env.NEEDS_SBOM == 'true' }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['SEC-04'] }}
+        run: |
+          # shellcheck disable=SC2086 # MAVEN_ARGS son varios argumentos
+          "$STANDARDS_DIR/scripts/sbom.sh" "$SEVERITY" $MAVEN_ARGS
+      - name: SEC-03 Vulnerabilities
+        if: ${{ !cancelled() && steps.sbom.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['SEC-03'] != 'off' }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['SEC-03'] }}
+          PARAMS: ${{ needs.config.outputs.params }}
+        run: '"$STANDARDS_DIR/scripts/check-vulnerabilities.sh" "$SEVERITY" "$PARAMS"'
+      - name: SEC-05 Licenses
+        if: ${{ !cancelled() && steps.sbom.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['SEC-05'] != 'off' }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['SEC-05'] }}
+          PARAMS: ${{ needs.config.outputs.params }}
+        run: '"$STANDARDS_DIR/scripts/check-licenses.sh" "$SEVERITY" "$PARAMS"'
+
+      # SARIF y JSON de cada herramienta (Gitleaks con los secretos ocultos). El SBOM va aparte y dura más: es lo que se
+      # consulta cuando sale una vulnerabilidad nueva
+      - name: Upload security reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-reports
+          path: |
+            ${{ runner.temp }}/security-reports
+            !${{ runner.temp }}/security-reports/bom.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload SBOM
+        if: ${{ !cancelled() && steps.sbom.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['SEC-04'] != 'off' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: ${{ runner.temp }}/security-reports/bom.json
+          if-no-files-found: error
+          retention-days: 30
+
   image:
     name: Docker image
     needs: config
@@ -379,7 +526,7 @@ jobs:
 
   twa-standards:
     name: twa-standards
-    needs: [config, style, build, image, repository]
+    needs: [config, style, build, security, image, repository]
     if: always()
     runs-on: ubuntu-latest
     permissions: {}

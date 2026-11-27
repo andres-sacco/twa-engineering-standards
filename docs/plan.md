@@ -9,7 +9,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 1 | Base del repo | Estructura, JSON Schema de `.twa-standards.yml`, versionado semver con tags móviles ([versionado](versionado.md)), CI propio, `examples/sample-service` | release-please, actionlint, zizmor, check-jsonschema, shellcheck | Hecha |
 | 2 | Build, estilo y tests | `java-ci.yml` (un reutilizable para servicios y librerías) equivalente al `ci.yml` actual, más enforcer, cobertura y zizmor sobre los workflows del repo. Ver [uso](uso.md) | Maven Enforcer, Spotless, Surefire/Failsafe, JaCoCo, action-junit-report, zizmor. Sin PIT: mutation testing consume demasiados recursos para el CI | Hecha |
 | 3 | Arquitectura | En `java-ci.yml`: ARC-01 lee de los reportes de los tests qué reglas corrieron y cuáles rompen (con su id); ARC-02 exige la versión mínima de la librería. No define reglas | twa-layered-rules / twa-hexagonal-rules, pom efectivo | Hecha |
-| 4 | Seguridad | Secretos, SAST, vulnerabilidades, SBOM, licencias | Gitleaks (CLI), Semgrep CE, SpotBugs + FindSecBugs, Trivy, OSV-Scanner, CycloneDX | — |
+| 4 | Seguridad | Job `Security` en `java-ci.yml`: secretos en archivos y commits, SAST, SBOM, vulnerabilidades y licencias sobre el SBOM. Ver [seguridad](seguridad.md) | Gitleaks, Semgrep CE, SpotBugs + FindSecBugs, CycloneDX, Trivy. Sin OSV-Scanner ni SonarQube | Hecha |
 | 5 | OpenAPI | Spec exportada en el build, lint con las convenciones de la plataforma, cambios incompatibles contra `main` | springdoc-openapi-maven-plugin, Spectral, oasdiff; Schemathesis más adelante | — |
 | 6 | Docker | Lint del Dockerfile, escaneo de la imagen y políticas propias | Hadolint, Trivy, Dockle, Conftest; Cosign y Syft cuando se publiquen imágenes | — |
 | 7 | Dependencias | Preset central de Renovate (grupos, 3 días de espera, actions e imágenes por digest, automerge de patch con CI verde), Renovate self-hosted en `renovate.yml` y DEP-01. Ver [dependencias](dependencias.md) | Renovate, renovate-config-validator | Hecha |
@@ -54,6 +54,21 @@ twa-engineering-standards/
 * **`architecture: layered | hexagonal`** en `.twa-standards.yml` (default `layered`, ADR-0001) elige la librería.
 * El servicio de prueba usa `twa-layered-rules`: el CI de este repo necesita el secret `PACKAGES_TOKEN`.
 
+## Decisiones de la etapa 4
+
+* **SonarQube afuera.** La edición Community no analiza PRs ni ramas (no puede bloquear un PR), necesita un servidor
+  propio, y lo que cubriría de esta etapa (SAST) ya lo hacen Semgrep y SpotBugs. Si hace falta un tablero, entra en la
+  etapa 8 leyendo los SARIF.
+* **El SBOM es la entrada de SEC-03 y SEC-05:** lo arma Maven con las versiones reales, incluidas las librerías TWA
+  privadas. Trivy y la lista de licencias no vuelven a resolver el pom.
+* **Sin OSV-Scanner:** sobre catalog encontró lo mismo que Trivy; los dos duplicaban los reportes.
+* **Licencias con lista permitida propia** (`params.allowedLicenses` de SEC-05), no la clasificación de Trivy: una
+  doble licencia pasa si una de las dos está permitida. Con Trivy, catalog tenía 6 falsos positivos.
+* **SpotBugs en `Build and test`**, sobre lo que ya compiló `verify`; Semgrep, Gitleaks y el SBOM en un job
+  `Security` en paralelo. Los dos reportan como `SEC-02`.
+* **Gitleaks y Trivy con Docker, fijados por digest**; el `customManager` del preset ahora actualiza también el
+  digest (`VERSION="x.y.z@sha256:…"`).
+
 ## Decisiones de la etapa 7
 
 * **Renovate self-hosted** en un workflow de este repo, no la GitHub App: todo open source y corriendo en Actions,
@@ -64,7 +79,7 @@ twa-engineering-standards/
 * **Automerge solo de patch de terceros e imágenes base**, y solo si la rama exige `ci / twa-standards`.
 * Las versiones fijadas en scripts y workflows llevan un comentario `# renovate:` y las actualiza un `customManager`
   del preset: este repo se mantiene con su propio preset.
-* Las etapas 4 a 6 siguen pendientes: `implementedStages` del catálogo reemplaza a un número de etapa.
+* Las etapas 4 a 6 seguían pendientes: `implementedStages` del catálogo reemplaza a un número de etapa.
 
 ## A validar
 
