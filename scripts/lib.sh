@@ -7,7 +7,7 @@
 # awk y printf con punto decimal, sea cual sea el locale
 export LC_NUMERIC=C
 
-# Versiones fijadas de las herramientas que se corren con uvx o pipx o con Docker (las usan los scripts que cargan este archivo)
+# Versiones fijadas de las herramientas que se corren con uvx o pipx, npx o Docker (las usan los scripts que cargan este archivo)
 # Renovate las actualiza por el comentario de la línea anterior (renovate/default.json, customManagers)
 # shellcheck disable=SC2034
 # renovate: datasource=pypi depName=check-jsonschema
@@ -19,6 +19,10 @@ ZIZMOR_VERSION="1.33.1"
 # renovate: datasource=pypi depName=semgrep
 SEMGREP_VERSION="1.185.0"
 
+# shellcheck disable=SC2034
+# renovate: datasource=npm depName=@stoplight/spectral-cli
+SPECTRAL_VERSION="6.17.1"
+
 # Imágenes de las herramientas que se corren con Docker: versión y digest (el digest cambia si alguien reescribe el tag)
 # shellcheck disable=SC2034
 # renovate: datasource=docker depName=ghcr.io/gitleaks/gitleaks
@@ -26,6 +30,9 @@ GITLEAKS_VERSION="v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9a
 # shellcheck disable=SC2034
 # renovate: datasource=docker depName=aquasec/trivy
 TRIVY_VERSION="0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb"
+# shellcheck disable=SC2034
+# renovate: datasource=docker depName=tufin/oasdiff
+OASDIFF_VERSION="v1.37.0@sha256:ff02af37a254b5199b9d72e7bba93dae5837a9119d59459168d1398893b47aea"
 
 STANDARDS_DIR="${STANDARDS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CATALOG="${STANDARDS_DIR}/config/controls.yml"

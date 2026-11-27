@@ -18,3 +18,8 @@ management:
     health:
       probes:
         enabled: true
+
+# Como los servicios: Swagger UI en <base>/documentation/swagger-ui.html y la spec en <base>/v3/api-docs
+springdoc:
+  swagger-ui:
+    path: /documentation/swagger-ui.html

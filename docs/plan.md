@@ -10,7 +10,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 2 | Build, estilo y tests | `java-ci.yml` (un reutilizable para servicios y librerías) equivalente al `ci.yml` actual, más enforcer, cobertura y zizmor sobre los workflows del repo. Ver [uso](uso.md) | Maven Enforcer, Spotless, Surefire/Failsafe, JaCoCo, action-junit-report, zizmor. Sin PIT: mutation testing consume demasiados recursos para el CI | Hecha |
 | 3 | Arquitectura | En `java-ci.yml`: ARC-01 lee de los reportes de los tests qué reglas corrieron y cuáles rompen (con su id); ARC-02 exige la versión mínima de la librería. No define reglas | twa-layered-rules / twa-hexagonal-rules, pom efectivo | Hecha |
 | 4 | Seguridad | Job `Security` en `java-ci.yml`: secretos en archivos y commits, SAST, SBOM, vulnerabilidades y licencias sobre el SBOM. Ver [seguridad](seguridad.md) | Gitleaks, Semgrep CE, SpotBugs + FindSecBugs, CycloneDX, Trivy. Sin OSV-Scanner ni SonarQube | Hecha |
-| 5 | OpenAPI | Spec exportada en el build, lint con las convenciones de la plataforma, cambios incompatibles contra `main` | springdoc-openapi-maven-plugin, Spectral, oasdiff; Schemathesis más adelante | — |
+| 5 | OpenAPI | En `java-ci.yml`: la spec que exporta el `OpenApiIT` de cada servicio, Spectral con las reglas `twa-*` y oasdiff contra la rama principal (se aprueba con la etiqueta `api-breaking-change`). Ver [openapi](openapi.md) | springdoc + OpenApiIT, Spectral, oasdiff; Schemathesis más adelante | Hecha |
 | 6 | Docker | Lint del Dockerfile, escaneo de la imagen y políticas propias | Hadolint, Trivy, Dockle, Conftest; Cosign y Syft cuando se publiquen imágenes | — |
 | 7 | Dependencias | Preset central de Renovate (grupos, 3 días de espera, actions e imágenes por digest, automerge de patch con CI verde), Renovate self-hosted en `renovate.yml` y DEP-01. Ver [dependencias](dependencias.md) | Renovate, renovate-config-validator | Hecha |
 | 8 | Reportes | Resumen por PR, SARIF, escaneo nocturno de todos los repos y tablero central | `$GITHUB_STEP_SUMMARY`, SARIF, Dependency-Track o DefectDojo | — |
@@ -68,6 +68,19 @@ twa-engineering-standards/
   `Security` en paralelo. Los dos reportan como `SEC-02`.
 * **Gitleaks y Trivy con Docker, fijados por digest**; el `customManager` del preset ahora actualiza también el
   digest (`VERSION="x.y.z@sha256:…"`).
+
+## Decisiones de la etapa 5
+
+* **La spec la exporta el `OpenApiIT`** que ya tienen los seis servicios (una línea de `karate.write`), no
+  `springdoc-openapi-maven-plugin`: el plugin levanta la app aparte y la app necesita Mongo. El IT ya la levanta con
+  Testcontainers.
+* **Un ruleset propio** (`config/spectral/twa.yaml`) que extiende el recomendado de Spectral: las reglas `twa-*` en
+  `error` son las convenciones de `docs/arquitectura.md` de twa-platform que se ven en la spec. Lo que es
+  comportamiento (cifrado, logs, idempotencia de cada operación) queda afuera.
+* **Ejemplos inválidos en `warn`:** en catalog había 238, todos de documentación.
+* **API-03 contra la cache**, como TST-02: la spec de la rama principal se guarda en cada push. Un cambio incompatible
+  a propósito se aprueba con la etiqueta `api-breaking-change`.
+* Un repo apaga una regla en `params.disabledRules` de API-02, con la razón; no con un ruleset propio.
 
 ## Decisiones de la etapa 7
 

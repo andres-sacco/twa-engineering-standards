@@ -6,7 +6,7 @@
 # stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa que no está en implementedStages
 # se pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
 # se combinan encima.
-implementedStages: [1, 2, 3, 4, 7]
+implementedStages: [1, 2, 3, 4, 5, 7]
 controls:
   BLD-01:
     name: Formato del código
@@ -132,7 +132,7 @@ controls:
       ownGroups: [com.twa]
   API-01:
     name: La spec OpenAPI se exporta en el build
-    tool: springdoc-openapi-maven-plugin
+    tool: springdoc + OpenApiIT (target/openapi.json)
     severity: warn
     stage: 5
     appliesTo: [service]
@@ -142,6 +142,9 @@ controls:
     severity: warn
     stage: 5
     appliesTo: [service]
+    params:
+      # Reglas de config/spectral/twa.yaml que el repo apaga (con la razón en un comentario de su .twa-standards.yml)
+      disabledRules: []
   API-03:
     name: Sin cambios incompatibles contra main sin aprobación explícita
     tool: oasdiff

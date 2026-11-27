@@ -1,0 +1,58 @@
+# Rompe cada regla twa-* en error: make lint verifica que Spectral las encuentre todas
+openapi: 3.1.0
+info:
+  title: Broken API
+  version: 1.0.0
+  description: Rompe las convenciones a propósito
+  contact:
+    url: https://github.com/andres-sacco/twa-engineering-standards
+servers:
+  - url: http://localhost:8080/flights
+tags:
+  - name: Prices
+    description: Precios
+paths:
+  /api/flights/sample/Prices/{id}:
+    get:
+      operationId: getPrice_1
+      description: Sin summary ni X-Client-Id
+      tags: [Prices]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: El precio
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Price"
+        "404":
+          description: Error en JSON común
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Problem Details sin code ni traceId
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Price:
+      type: object
+      properties:
+        amount:
+          type: number
+        totalPrice:
+          type: [number, "null"]
+    Error:
+      type: object
+      properties:
+        message:
+          type: string

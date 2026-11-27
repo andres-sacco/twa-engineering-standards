@@ -11,10 +11,11 @@ de twa-platform. Las reglas de arquitectura **no** están acá: siguen en
 
 ## Estado
 
-Etapas 0 a 4 y 7 terminadas: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura,
-seguridad (secretos, SAST, SBOM, vulnerabilidades y licencias), imagen, zizmor y el chequeo de Renovate (controles
-`BLD-*`, `TST-*`, `ARC-*`, `SEC-*`, `DKR-01`, `WFL-01` y `DEP-01`), y el preset de Renovate con su workflow
-self-hosted mantiene las dependencias. Faltan OpenAPI y Docker (etapas 5 y 6).
+Etapas 0 a 5 y 7 terminadas: `java-ci.yml` corre build, tests, cobertura, enforcer, reglas de arquitectura,
+seguridad (secretos, SAST, SBOM, vulnerabilidades y licencias), el contrato OpenAPI (convenciones con Spectral y cambios
+incompatibles con oasdiff), imagen, zizmor y el chequeo de Renovate (controles `BLD-*`, `TST-*`, `ARC-*`, `SEC-*`,
+`API-*`, `DKR-01`, `WFL-01` y `DEP-01`), y el preset de Renovate con su workflow self-hosted mantiene las
+dependencias. Falta Docker (etapa 6).
 Ningún repo lo usa todavía: el piloto con catalog es la etapa 9.
 
 ## Cómo se usa
@@ -49,6 +50,7 @@ make sample-image   # construye su imagen
 | Documento | Qué responde |
 |---|---|
 | [docs/uso.md](docs/uso.md) | Cómo un repo adopta `java-ci.yml`: su `ci.yml`, inputs, qué corre y qué cambia respecto del CI actual |
+| [docs/openapi.md](docs/openapi.md) | El contrato OpenAPI: cómo se exporta la spec, las reglas de Spectral, los cambios incompatibles y cómo aprobarlos |
 | [docs/seguridad.md](docs/seguridad.md) | Los controles de seguridad: herramientas, reportes, cómo suprimir un hallazgo y cómo probarlos en local |
 | [docs/dependencias.md](docs/dependencias.md) | El preset de Renovate: cómo lo adopta un repo, grupos, automerge, Renovate self-hosted y sus secrets |
 | [docs/plan.md](docs/plan.md) | Las etapas, qué entrega cada una y con qué herramientas |

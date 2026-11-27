@@ -15,15 +15,18 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
   ni a composite actions de este repo (ver `docs/plan.md` § Decisiones de la etapa 2). `ci.yml`, `release.yml` y
   `renovate.yml` (Renovate self-hosted sobre los repos TWA) son de este repo; `ci.yml` corre `java-ci.yml` sobre el
   servicio de prueba.
+- `config/spectral/twa.yaml`: las reglas de Spectral de API-02 (`twa-*`, las convenciones de las APIs de
+  twa-platform). Una regla nueva va con su caso en `config/spectral/tests/invalida.yaml` (`make lint` lo verifica).
 - `renovate/default.json`: el preset de Renovate de todos los repos TWA (`docs/dependencias.md`). Este repo lo usa en
   su `renovate.json`.
 - `scripts/`: `lib.sh` (`report`, versiones de herramientas), `read-config.sh`, `run-control.sh`, un script por control
   que no es un comando de Maven (`check-build-versions.sh`, `check-architecture.sh`, `check-architecture-version.sh`,
   `coverage.sh`, `check-workflows.sh`, `check-renovate.sh`, `check-secrets.sh`, `check-sast.sh`, `check-spotbugs.sh`,
-  `sbom.sh`, `check-vulnerabilities.sh`, `check-licenses.sh`), `maven-settings.sh` y `lint.sh`.
+  `sbom.sh`, `check-vulnerabilities.sh`, `check-licenses.sh`, `openapi-export.sh`, `check-openapi-lint.sh`,
+  `check-openapi-breaking.sh`), `maven-settings.sh` y `lint.sh`.
 - `examples/sample-service/`: servicio mínimo con la forma de los servicios TWA, para probar los workflows. No es una
   plantilla.
-- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `seguridad.md` (SEC-*), `dependencias.md` (Renovate),
+- `docs/`: `plan.md` (etapas y estado), `uso.md` (cómo un repo adopta `java-ci.yml`), `seguridad.md` (SEC-*), `openapi.md` (API-*), `dependencias.md` (Renovate),
   `relevamiento.md`, `politica-de-severidades.md`, `versionado.md`.
 
 ## Reglas de trabajo

@@ -4,7 +4,8 @@ name: TWA Java CI
 # Java y severidad de cada control) y corre los controles que le tocan. Cada control falla el check solo si su
 # severidad es block (docs/politica-de-severidades.md). Uso y migración: docs/uso.md.
 #
-# Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02, SEC-02 SpotBugs) |
+# Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02, SEC-02 SpotBugs,
+# API-01, API-02, API-03) |
 # security (SEC-01, SEC-02 Semgrep, SEC-03, SEC-04, SEC-05) | image (DKR-01) | repository (WFL-01, DEP-01)
 # → twa-standards. El último resume a los demás: es el check que se exige en la protección de la rama.
 on:
@@ -315,6 +316,62 @@ jobs:
         with:
           name: security-reports-spotbugs
           path: ${{ runner.temp }}/spotbugs-reports
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # La spec la exporta el OpenApiIT de cada servicio dentro de verify (target/openapi.json). API-02 y API-03 la
+      # leen de ahí; API-03 compara contra la del último push a la rama principal, que queda en la cache de Actions
+      - id: openapi
+        name: API-01 OpenAPI spec
+        if: >-
+          ${{ !cancelled() && steps.verify.outputs.result == 'ok' && (
+          fromJSON(needs.config.outputs.severities)['API-01'] != 'off'
+          || fromJSON(needs.config.outputs.severities)['API-02'] != 'off'
+          || fromJSON(needs.config.outputs.severities)['API-03'] != 'off') }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['API-01'] }}
+          REPORTS_DIR: ${{ runner.temp }}/openapi-reports
+        run: '"$STANDARDS_DIR/scripts/openapi-export.sh" "$SEVERITY"'
+      - name: API-02 Spectral
+        if: ${{ !cancelled() && steps.openapi.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['API-02'] != 'off' }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['API-02'] }}
+          PARAMS: ${{ needs.config.outputs.params }}
+          REPORTS_DIR: ${{ runner.temp }}/openapi-reports
+        run: '"$STANDARDS_DIR/scripts/check-openapi-lint.sh" "$SEVERITY" "$PARAMS"'
+      - name: Restore OpenAPI baseline
+        if: ${{ !cancelled() && steps.openapi.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['API-03'] != 'off' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/openapi-baseline
+          key: twa-openapi-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
+          restore-keys: twa-openapi-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-
+      - name: API-03 Breaking changes
+        if: ${{ !cancelled() && steps.openapi.outputs.result == 'ok' && fromJSON(needs.config.outputs.severities)['API-03'] != 'off' }}
+        env:
+          SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['API-03'] }}
+          REPORTS_DIR: ${{ runner.temp }}/openapi-reports
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'api-breaking-change') }}
+        run: '"$STANDARDS_DIR/scripts/check-openapi-breaking.sh" "$SEVERITY" "$RUNNER_TEMP/openapi-baseline" "$APPROVED"'
+      - name: Prepare OpenAPI baseline
+        if: >-
+          ${{ !cancelled() && steps.openapi.outputs.result == 'ok' && github.event_name == 'push'
+          && github.ref_name == github.event.repository.default_branch }}
+        run: mkdir -p "$RUNNER_TEMP/openapi-baseline" && cp "$RUNNER_TEMP"/openapi-reports/specs/*.json "$RUNNER_TEMP/openapi-baseline/"
+      - name: Save OpenAPI baseline
+        if: >-
+          ${{ !cancelled() && steps.openapi.outputs.result == 'ok' && github.event_name == 'push'
+          && github.ref_name == github.event.repository.default_branch }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/openapi-baseline
+          key: twa-openapi-${{ inputs.working-directory }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
+      - name: Upload OpenAPI reports
+        if: ${{ !cancelled() && steps.openapi.outputs.result == 'ok' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: openapi
+          path: ${{ runner.temp }}/openapi-reports
           if-no-files-found: ignore
           retention-days: 7
 

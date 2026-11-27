@@ -1,0 +1,124 @@
+# Cumple todas las reglas twa-*: make lint verifica que Spectral no encuentre nada en error ni en warn
+openapi: 3.1.0
+info:
+  title: Sample API
+  version: 1.0.0
+  description: Servicio de prueba de las reglas de Spectral
+  contact:
+    url: https://github.com/andres-sacco/twa-engineering-standards
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: /api/flights/sample
+tags:
+  - name: Prices
+    description: Precios
+paths:
+  /prices/{id}:
+    get:
+      operationId: getPrice
+      summary: Get a price
+      description: Devuelve un precio
+      tags: [Prices]
+      parameters:
+        - $ref: "#/components/parameters/ClientId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: El precio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Price"
+              example:
+                total: "1250.00"
+                currency: ARS
+        "404":
+          description: No existe
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                NOT_FOUND:
+                  value:
+                    type: about:blank
+                    title: Not Found
+                    status: 404
+                    code: NOT_FOUND
+  /prices:
+    post:
+      operationId: createPrice
+      summary: Create a price
+      description: Crea un precio
+      tags: [Prices]
+      parameters:
+        - $ref: "#/components/parameters/ClientId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Price"
+            example:
+              total: "1250.00"
+              currency: ARS
+      responses:
+        "201":
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Price"
+              example:
+                total: "1250.00"
+                currency: ARS
+        "500":
+          description: Error interno
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              example:
+                type: about:blank
+                title: Internal Server Error
+                status: 500
+                code: INTERNAL_ERROR
+                traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+components:
+  parameters:
+    ClientId:
+      name: X-Client-Id
+      in: header
+      required: false
+      description: Quién consume la API
+      schema:
+        type: string
+  schemas:
+    Price:
+      type: object
+      properties:
+        total:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]{2}$"
+        currency:
+          type: string
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+        traceId:
+          type: string
