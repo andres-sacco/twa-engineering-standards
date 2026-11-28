@@ -15,7 +15,8 @@ java: "25"           # default 25; las librerías declaran la suya ("11", "17")
 architecture: layered  # solo servicios: layered (twa-layered-rules, el default) | hexagonal (twa-hexagonal-rules)
 ```
 
-Solo se agregan los controles que cambian su default (`config/controls.yml`). Bajar una severidad necesita `reason`:
+Solo se agregan los controles que cambian su default (`config/controls.yml`). Bajar una severidad necesita `reason`;
+si la excepción es temporal, también `until` (`GOV-02` la marca cuando vence):
 
 ```yaml
 controls:
@@ -25,7 +26,11 @@ controls:
   BLD-01:
     severity: "off"
     reason: La librería no tiene Spotless configurado (pendiente)
+    until: 2027-02-28
 ```
+
+Un PR que baja una severidad, cambia params o agrega una supresión queda marcado por `GOV-01` (⚠️ en el resumen):
+quien lo revisa ve cada excepción nueva.
 
 ## 2. `.github/workflows/ci.yml`
 
@@ -94,7 +99,7 @@ build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
 | `Build and test` | `BLD-03`, `ARC-02`, `BLD-04`, `BLD-02`, `ARC-01`, `TST-01`, `TST-02`, `SEC-02`, `API-01`, `API-02`, `API-03` | Versiones de Java y Maven exigidas por el enforcer del pom; versión mínima de la librería de reglas; convergencia de dependencias; `mvn verify` (unit e IT, con las reglas de arquitectura del perfil `architecture-rules`) con JaCoCo agregado por línea de comandos; qué reglas corrieron y cuáles rompen; cobertura de líneas contra el mínimo y contra la rama principal; al final, SpotBugs + FindSecBugs sobre lo compilado (`SEC-02`) y el contrato: la spec de `target/openapi.json` (`API-01`), Spectral (`API-02`) y oasdiff contra la rama principal (`API-03`, ver [openapi](openapi.md)). Sube los reportes si fallan los tests, el reporte de cobertura y el jar |
 | `Security` | `SEC-01` a `SEC-05` | Gitleaks sobre los archivos y los commits del PR; Semgrep; SBOM CycloneDX y, sobre el SBOM, vulnerabilidades con Trivy y licencias contra la lista permitida. Sube `security-reports` y `sbom`. Detalle y supresiones en [seguridad](seguridad.md) |
 | `Docker image` | `DKR-01` a `DKR-04` | Hadolint sobre el Dockerfile; construye la imagen con el `settings.xml` como secret y la carga en el runner (no la publica); Trivy sobre los paquetes del sistema operativo y los secretos de las capas; políticas TWA con Conftest. Sube `docker-reports`. Detalle en [docker](docker.md) |
-| `Repository` | `WFL-01`, `DEP-01` | zizmor sobre `.github/workflows`; `renovate.json` con el preset y sin Dependabot |
+| `Repository` | `WFL-01`, `DEP-01`, `GOV-01`, `GOV-02` | zizmor sobre `.github/workflows`; `renovate.json` con el preset y sin Dependabot; las excepciones que agregan los commits nuevos y el formato de todas las supresiones del repo ([seguridad](seguridad.md#suprimir-un-hallazgo)) |
 | `twa-standards` | — | Una tabla con todos los controles en su resumen y el artifact `twa-results` (ver [reportes](reportes.md)); falla si falló algún job (un control en `block`) o si un control en `block` quedó sin evaluar |
 
 Cada job deja en su resumen una tabla con el resultado de cada control, y los que fallan en `warn` quedan como
@@ -141,4 +146,6 @@ El mínimo de TST-01 (default **60 %**) es provisorio: se ajusta con lo que mida
 * PRs desde forks: el workflow hace checkout de este repo en `standards-ref`, que existe; los secrets no llegan, así que
   las librerías de GitHub Packages no se pueden bajar (como hoy).
 * `standards-ref` es un input y no la versión con la que se llamó al workflow porque GitHub no expone, dentro de un
-  workflow reutilizable, el commit desde el que corre. release-please actualiza su default en cada release.
+  workflow reutilizable, el commit desde el que corre. release-please actualiza su default en cada release. El job
+  `Config` lo resuelve a un commit y los demás jobs usan ese commit (`standardsSha` en `twa-results`); que el tag no se
+  mueva depende de la protección de tags de este repo ([versionado](versionado.md#tags-inmutables)).

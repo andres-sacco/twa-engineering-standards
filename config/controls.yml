@@ -7,7 +7,7 @@
 # se pueden configurar pero todavía no corren. jobs: los jobs de java-ci.yml que lo informan (summary.sh los usa para
 # saber si un control en block quedó sin evaluar). params: los parámetros por defecto; los del .twa-standards.yml del
 # repo se combinan encima.
-implementedStages: [1, 2, 3, 4, 5, 6, 7]
+implementedStages: [1, 2, 3, 4, 5, 6, 7, 10]
 controls:
   BLD-01:
     name: Formato del código
@@ -213,5 +213,19 @@ controls:
     tool: zizmor
     severity: warn
     stage: 2
+    jobs: [repository]
+    appliesTo: [service, library]
+  GOV-01:
+    name: Las excepciones nuevas quedan a la vista
+    tool: git diff (supresiones, archunit_store, .twa-standards.yml)
+    severity: warn
+    stage: 10
+    jobs: [repository]
+    appliesTo: [service, library]
+  GOV-02:
+    name: Las supresiones tienen razón y vencimiento
+    tool: Archivos de supresión de cada herramienta
+    severity: warn
+    stage: 10
     jobs: [repository]
     appliesTo: [service, library]

@@ -20,9 +20,11 @@ Cada control tiene un id (`BLD-01`, `SEC-03`…) que aparece en el mensaje cuand
 3. **Excepción: secretos (`SEC-01`) bloquea desde el primer día.** Un secreto en el historial no se arregla después.
 4. **Suprimir un hallazgo, no el control.** Una supresión va en el archivo de la herramienta (`.gitleaksignore`,
    `.trivyignore.yaml`, comentario `nosemgrep`…) con la razón y, si es una vulnerabilidad, una fecha de vencimiento. Al
-   vencer, el hallazgo vuelve a aparecer.
+   vencer, el hallazgo vuelve a aparecer. `GOV-02` verifica que cada supresión tenga su razón y su vencimiento, y
+   `GOV-01` avisa en el PR cada supresión nueva: el mismo PR puede suprimir el hallazgo que lo bloquea.
 5. **El default lo define este repo**; un repo puede subir la severidad pero solo bajarla con una razón escrita en su
-   `.twa-standards.yml`, que se revisa en el PR.
+   `.twa-standards.yml`, que se revisa en el PR (`GOV-01` lo marca). Una excepción temporal lleva `until`: vencida,
+   `GOV-02` la marca.
 6. Subir un default de `warn` a `block` en este repo es un **cambio mayor** (`v2`), salvo que todos los repos ya lo
    tengan en `block`.
 
@@ -55,5 +57,7 @@ Los ids son estables: un control que se elimina no reusa su id. La fuente de ver
 | `DKR-04` | Políticas TWA: usuario sin privilegios, `HEALTHCHECK`, base `eclipse-temurin`, sin secretos en capas | Conftest (OPA), Trivy (secretos en las capas) | warn | 6 |
 | `DEP-01` | El repo usa el preset de Renovate y no Dependabot | Renovate | warn | 7 |
 | `WFL-01` | Actions fijadas por SHA y `permissions` mínimos | zizmor | warn | 2 |
+| `GOV-01` | Las excepciones nuevas (supresiones, reglas congeladas, severidades bajadas) quedan a la vista en el PR | git diff | warn | 10 |
+| `GOV-02` | Las supresiones tienen razón y, las de vulnerabilidades, vencimiento; ninguna excepción con `until` vencido | Archivos de supresión de cada herramienta | warn | 10 |
 
 Los seis servicios ya cumplen `DKR-04`: es candidato a pasar a `block` apenas se implemente.

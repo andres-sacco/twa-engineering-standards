@@ -19,7 +19,7 @@ source scripts/lib.sh
 SCHEMA="schema/twa-standards.schema.json"
 CATALOG="config/controls.yml"
 POLICY="docs/politica-de-severidades.md"
-ID_PATTERN='^(BLD|TST|ARC|SEC|API|DKR|DEP|WFL)-[0-9]{2}$'
+ID_PATTERN='^(BLD|TST|ARC|SEC|API|DKR|DEP|WFL|GOV)-[0-9]{2}$'
 
 errors=0
 section() { printf '==> %s\n' "$1"; }

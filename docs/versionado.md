@@ -14,6 +14,28 @@ ese repo sube la versión que usa (Renovate abre el PR, etapa 7).
 
 Los tags móviles los mueve `.github/workflows/release.yml` después de cada release.
 
+### Tags inmutables
+
+Los repos fijan `java-ci.yml` por SHA, pero los scripts y el catálogo salen del tag `vX.Y.Z` (`standards-ref`): si
+alguien moviera ese tag, cambiaría el CI de todos los repos sin que cambie ningún SHA. Por eso los `vX.Y.Z` de este
+repo no se pueden mover ni borrar. Se configura una vez, con permisos de administración:
+
+* **Releases inmutables** (Settings → General → Releases → *Enable release immutability*): el tag de cada release
+  publicado queda fijo. O, si no está disponible,
+* **un ruleset de tags** que restringe actualizar y borrar `refs/tags/v*.*.*` (no alcanza a `vX` ni `vX.Y`, que
+  `release.yml` mueve):
+
+  ```bash
+  gh api -X POST repos/andres-sacco/twa-engineering-standards/rulesets --input - <<'JSON'
+  {"name": "Tags de release inmutables", "target": "tag", "enforcement": "active",
+   "conditions": {"ref_name": {"include": ["refs/tags/v*.*.*"], "exclude": []}},
+   "rules": [{"type": "update"}, {"type": "deletion"}]}
+  JSON
+  ```
+
+El job `Config` de `java-ci.yml` resuelve el tag a un commit una vez por corrida y lo deja en `twa-results`
+(`standardsSha`): todos los jobs corren lo mismo, y se puede ver qué commit corrió.
+
 **Mientras la versión sea `0.x`** (hasta que termine el piloto de la etapa 9) un cambio incompatible sube el minor, no
 el major (`bump-minor-pre-major`): un repo que siga un tag móvil usa `@v0.Y`, no `@v0`.
 
@@ -56,3 +78,4 @@ mueve tags).
 ## A validar
 
 * Que la rama `main` tenga protección con el check `Lint` y `Sample service / twa-standards` requeridos.
+* Que los tags `vX.Y.Z` estén protegidos ([arriba](#tags-inmutables)).

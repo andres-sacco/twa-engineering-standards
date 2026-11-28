@@ -7,7 +7,7 @@ name: TWA Java CI
 # Jobs: config → style (BLD-01) | build (BLD-02, BLD-03, BLD-04, ARC-01, ARC-02, TST-01, TST-02, SEC-02 SpotBugs,
 # API-01, API-02, API-03) |
 # security (SEC-01, SEC-02 Semgrep, SEC-03, SEC-04, SEC-05) | image (DKR-01, DKR-02, DKR-03, DKR-04) |
-# repository (WFL-01, DEP-01)
+# repository (WFL-01, DEP-01, GOV-01, GOV-02)
 # → twa-standards. El último resume a los demás (una tabla con todos los controles y el artifact twa-results): es el
 # check que se exige en la protección de la rama.
 on:
@@ -44,7 +44,7 @@ on:
       standards-ref:
         description: Versión de twa-engineering-standards de la que salen los scripts y el catálogo. No cambiarla
         type: string
-        default: v0.1.1 # x-release-please-version
+        default: v0.2.0 # x-release-please-version
     secrets:
       PACKAGES_TOKEN:
         description: Token clásico con read:packages para las librerías TWA de GitHub Packages
@@ -83,6 +83,7 @@ jobs:
       java: ${{ steps.config.outputs.java }}
       severities: ${{ steps.config.outputs.severities }}
       params: ${{ steps.config.outputs.params }}
+      standards-sha: ${{ steps.standards.outputs.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -93,9 +94,14 @@ jobs:
           ref: ${{ inputs.standards-ref }}
           path: .twa-standards
           persist-credentials: false
+      # standards-ref (un tag) se resuelve acá a un commit, una sola vez: los demás jobs hacen checkout de ese commit,
+      # así todos corren los mismos scripts aunque el tag se mueva durante la corrida, y queda en twa-results. Que el
+      # tag no se pueda mover lo garantiza la protección de los tags vX.Y.Z (docs/versionado.md)
       # Fuera del workspace: que no entre en el build ni en el contexto de Docker
-      - name: Standards
+      - id: standards
+        name: Standards
         run: |
+          echo "sha=$(git -C .twa-standards rev-parse HEAD)" >>"$GITHUB_OUTPUT"
           mv .twa-standards "$RUNNER_TEMP/twa-standards"
           echo "STANDARDS_DIR=$RUNNER_TEMP/twa-standards" >>"$GITHUB_ENV"
       - id: config
@@ -123,7 +129,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: andres-sacco/twa-engineering-standards
-          ref: ${{ inputs.standards-ref }}
+          ref: ${{ needs.config.outputs.standards-sha }}
           path: .twa-standards
           persist-credentials: false
       - name: Standards
@@ -183,7 +189,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: andres-sacco/twa-engineering-standards
-          ref: ${{ inputs.standards-ref }}
+          ref: ${{ needs.config.outputs.standards-sha }}
           path: .twa-standards
           persist-credentials: false
       - name: Standards
@@ -448,7 +454,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: andres-sacco/twa-engineering-standards
-          ref: ${{ inputs.standards-ref }}
+          ref: ${{ needs.config.outputs.standards-sha }}
           path: .twa-standards
           persist-credentials: false
       - name: Standards
@@ -472,13 +478,8 @@ jobs:
           PR_HEAD: ${{ github.event.pull_request.head.sha }}
           PUSH_BEFORE: ${{ github.event.before }}
         run: |
-          range=""
-          if [[ -n "$PR_BASE" && -n "$PR_HEAD" ]]; then
-            range="${PR_BASE}..${PR_HEAD}"
-          elif [[ -n "$PUSH_BEFORE" && ! "$PUSH_BEFORE" =~ ^0+$ ]]; then
-            range="${PUSH_BEFORE}..${GITHUB_SHA}"
-          fi
-          "$STANDARDS_DIR/scripts/check-secrets.sh" "$SEVERITY" "$range"
+          source "$STANDARDS_DIR/scripts/lib.sh"
+          "$STANDARDS_DIR/scripts/check-secrets.sh" "$SEVERITY" "$(event_range)"
 
       - name: SEC-02 Semgrep
         if: ${{ !cancelled() && fromJSON(needs.config.outputs.severities)['SEC-02'] != 'off' }}
@@ -584,7 +585,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: andres-sacco/twa-engineering-standards
-          ref: ${{ inputs.standards-ref }}
+          ref: ${{ needs.config.outputs.standards-sha }}
           path: .twa-standards
           persist-credentials: false
       - name: Standards
@@ -684,18 +685,22 @@ jobs:
     if: >-
       fromJSON(needs.config.outputs.severities)['WFL-01'] != 'off'
       || fromJSON(needs.config.outputs.severities)['DEP-01'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['GOV-01'] != 'off'
+      || fromJSON(needs.config.outputs.severities)['GOV-02'] != 'off'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
     steps:
+      # Todo el historial: GOV-01 compara los commits del PR o del push
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: andres-sacco/twa-engineering-standards
-          ref: ${{ inputs.standards-ref }}
+          ref: ${{ needs.config.outputs.standards-sha }}
           path: .twa-standards
           persist-credentials: false
       - name: Standards
@@ -714,6 +719,21 @@ jobs:
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['DEP-01'] }}
         run: '"$STANDARDS_DIR/scripts/check-renovate.sh" "$SEVERITY"'
+      # Las supresiones y las severidades bajadas: qué agregan los commits nuevos (GOV-01) y que tengan su razón (GOV-02)
+      - name: GOV-01 GOV-02 Exceptions
+        if: >-
+          ${{ !cancelled() && (fromJSON(needs.config.outputs.severities)['GOV-01'] != 'off'
+          || fromJSON(needs.config.outputs.severities)['GOV-02'] != 'off') }}
+        env:
+          SEVERITY_CHANGES: ${{ fromJSON(needs.config.outputs.severities)['GOV-01'] }}
+          SEVERITY_FORMAT: ${{ fromJSON(needs.config.outputs.severities)['GOV-02'] }}
+          CONFIG_FILE: ${{ inputs.working-directory }}/${{ inputs.config-file }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          source "$STANDARDS_DIR/scripts/lib.sh"
+          "$STANDARDS_DIR/scripts/check-suppressions.sh" "$SEVERITY_CHANGES" "$SEVERITY_FORMAT" "$(event_range)" "$CONFIG_FILE"
       # El resultado de cada control de este job, para el resumen del job twa-standards
       - name: Upload results
         if: ${{ !cancelled() }}
@@ -737,7 +757,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: andres-sacco/twa-engineering-standards
-          ref: ${{ inputs.standards-ref }}
+          ref: ${{ needs.config.outputs.standards-sha }}
           path: .twa-standards
           persist-credentials: false
       - name: Standards
@@ -759,6 +779,7 @@ jobs:
           SEVERITIES: ${{ needs.config.outputs.severities }}
           WORKING_DIRECTORY: ${{ inputs.working-directory }}
           STANDARDS_REF: ${{ inputs.standards-ref }}
+          STANDARDS_SHA: ${{ needs.config.outputs.standards-sha }}
         run: '"$STANDARDS_DIR/scripts/summary.sh" "$RUNNER_TEMP/twa-results" "$SEVERITIES" "$RUNNER_TEMP/twa-results.json"'
       - name: Upload twa-results
         if: needs.config.result == 'success'

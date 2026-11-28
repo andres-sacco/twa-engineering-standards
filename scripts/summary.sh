@@ -8,7 +8,7 @@
 # falló y lo salteó) sale en la salida `unevaluated` del step: el job twa-standards falla por eso. Si el job no dejó
 # ningún resultado (no corrió, o no pudo subir el artifact por la cuota), no se puede saber y no cuenta.
 # Uso: summary.sh DIRECTORIO_RESULTADOS SEVERIDADES_JSON SALIDA_JSON. Lee del entorno los datos de la corrida
-# (GITHUB_REPOSITORY, GITHUB_SHA…) y WORKING_DIRECTORY y STANDARDS_REF.
+# (GITHUB_REPOSITORY, GITHUB_SHA…) y WORKING_DIRECTORY, STANDARDS_REF y STANDARDS_SHA.
 set -euo pipefail
 # shellcheck source=scripts/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -27,11 +27,12 @@ run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-local}/ac
 jq -n --argjson reported "$reported" --argjson severities "$severities" --argjson catalog "$catalog" \
   --argjson jobs "$jobs_reported" --arg repository "${GITHUB_REPOSITORY:-local}" --arg wd "${WORKING_DIRECTORY:-.}" \
   --arg ref "${GITHUB_REF:-}" --arg sha "${GITHUB_SHA:-}" --arg event "${GITHUB_EVENT_NAME:-}" --arg run "$run_url" \
-  --arg standards "${STANDARDS_REF:-}" --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+  --arg standards "${STANDARDS_REF:-}" --arg standards_sha "${STANDARDS_SHA:-}" \
+  --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
   def rank: {"fail": 3, "skip": 2, "ok": 1}[.] // 0;
   {
     version: 1, repository: $repository, workingDirectory: $wd, ref: $ref, sha: $sha, event: $event,
-    run: $run, standardsRef: $standards, createdAt: $date,
+    run: $run, standardsRef: $standards, standardsSha: $standards_sha, createdAt: $date,
     controls: [
       $catalog[] | . as $c | .id as $id | ($severities[$id] // "off") as $severity
       | [$reported[] | select(.id == $id)] as $r
