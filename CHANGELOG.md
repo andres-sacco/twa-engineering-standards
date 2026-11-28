@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.2.1...v0.2.2) (2026-11-28)
+
+
+### Correcciones
+
+* endurece el pipeline y alinea la documentación ([3229664](https://github.com/andres-sacco/twa-engineering-standards/commit/3229664baafe4adee4cdd4f253d4ba3ca4d0117c))
+
 ## [0.2.1](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.2.0...v0.2.1) (2026-11-28)
 
 
