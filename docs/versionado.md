@@ -29,6 +29,20 @@ repo no se pueden mover ni borrar. Se configura una vez, con permisos de adminis
   JSON
   ```
 
+Un segundo ruleset impide **crear** cualquier tag que no sea `refs/tags/v*.*.*` (`vX`, `vX.Y`, `latest`…): solo
+existen los tags de los releases.
+
+```bash
+gh api -X POST repos/andres-sacco/twa-engineering-standards/rulesets --input - <<'JSON'
+{"name": "Solo tags vX.Y.Z", "target": "tag", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["~ALL"], "exclude": ["refs/tags/v*.*.*"]}},
+ "rules": [{"type": "creation"}]}
+JSON
+```
+
+Los dos rulesets no tienen excepciones (*bypass*), ni siquiera para los administradores: release-please crea los
+`vX.Y.Z`, que pasan por el patrón.
+
 El job `Config` de `java-ci.yml` resuelve el tag a un commit una vez por corrida y lo deja en `twa-results`
 (`standardsSha`): todos los jobs corren lo mismo, y se puede ver qué commit corrió.
 
@@ -73,4 +87,3 @@ Es un fine-grained token sobre **solo este repo** con Contents, Pull requests y 
 ## A validar
 
 * Que la rama `main` tenga protección con el check `Lint` y `Sample service / twa-standards` requeridos.
-* Que los tags `vX.Y.Z` estén protegidos ([arriba](#tags-inmutables)).
