@@ -34,7 +34,10 @@ else
 fi
 
 section "Workflows: zizmor ${ZIZMOR_VERSION} (WFL-01)"
-if pytool "zizmor==${ZIZMOR_VERSION}" zizmor --offline --no-progress .github/workflows; then
+# Online si hay GH_TOKEN (en CI, el del workflow; en local: GH_TOKEN="$(gh auth token)" make lint)
+zizmor_args=(--no-progress)
+[[ -n "${GH_TOKEN:-}" ]] || zizmor_args+=(--offline)
+if pytool "zizmor==${ZIZMOR_VERSION}" zizmor "${zizmor_args[@]}" .github/workflows; then
   ok "sin problemas"
 else
   fail "zizmor encontró problemas"

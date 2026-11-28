@@ -11,8 +11,8 @@ on:
       log-level:
         description: Nivel de log de Renovate
         type: choice
-        options: [info, debug]
-        default: info
+        options: [warn, info, debug]
+        default: warn
 
 concurrency:
   group: renovate
@@ -31,7 +31,9 @@ jobs:
     steps:
       - uses: renovatebot/github-action@1376d90bcd3a4d4e7393ae762eea56ac684aee38 # v48.0.0
         env:
-          LOG_LEVEL: ${{ inputs.log-level || 'info' }}
+          # warn por defecto: este repo es público y sus logs también; en info Renovate lista los repos privados, sus
+          # dependencias y sus ramas
+          LOG_LEVEL: ${{ inputs.log-level || 'warn' }}
           RENOVATE_PLATFORM: github
           # Todos los repos twa-* a los que llega el token, pero solo los que ya tienen su renovate.json: la adopción
           # es repo por repo (etapa 9), no un PR de onboarding en cada uno

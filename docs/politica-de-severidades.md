@@ -60,4 +60,5 @@ Los ids son estables: un control que se elimina no reusa su id. La fuente de ver
 | `GOV-01` | Las excepciones nuevas (supresiones, reglas congeladas, severidades bajadas) quedan a la vista en el PR | git diff | warn | 10 |
 | `GOV-02` | Las supresiones tienen razón y, las de vulnerabilidades, vencimiento; ninguna excepción con `until` vencido | Archivos de supresión de cada herramienta | warn | 10 |
 
-Los seis servicios ya cumplen `DKR-04`: es candidato a pasar a `block` apenas se implemente.
+Los seis servicios ya cumplen `DKR-04`: es el primer candidato a pasar a `block`, cuando cumpla la regla 2 en cada
+repo (dos semanas o 10 PR en `warn`, sin hallazgos ni falsos positivos).

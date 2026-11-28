@@ -1,8 +1,9 @@
 name: Release
 
 # release-please mantiene un PR de release con el CHANGELOG a partir de los commits (Conventional Commits). Al
-# mergearlo crea el tag vX.Y.Z y el release, y este workflow mueve los tags vX y vX.Y a ese commit: los repos
-# consumidores usan @vX (ver docs/versionado.md).
+# mergearlo crea el tag vX.Y.Z y el release, y este workflow mueve los tags vX y vX.Y a ese commit. Los repos
+# consumidores fijan java-ci.yml por el SHA de vX.Y.Z; vX y vX.Y sirven para ver el último release de cada línea
+# (ver docs/versionado.md).
 on:
   push:
     branches: [main]

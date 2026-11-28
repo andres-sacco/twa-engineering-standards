@@ -43,10 +43,14 @@ on:
   push:
     branches: [main]
   pull_request:
+    # labeled y unlabeled: poner o sacar la etiqueta api-breaking-change (API-03) vuelve a correr el CI
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
+# En un PR, un push nuevo cancela la corrida anterior; en main no: cada push guarda las líneas de base de TST-02 y
+# API-03 y el twa-results que lee el tablero
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions: {}
 

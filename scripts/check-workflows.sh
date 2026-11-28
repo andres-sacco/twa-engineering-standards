@@ -13,7 +13,11 @@ if [[ ! -d .github/workflows ]]; then
   report WFL-01 "$severity" ok "Sin workflows"
   exit 0
 fi
-if pytool "zizmor==${ZIZMOR_VERSION}" zizmor --offline --no-progress --format=github .github/workflows; then
+# Con GH_TOKEN corren también las auditorías que consultan GitHub (impostor-commit, ref-confusion,
+# known-vulnerable-actions); sin token, solo las que no necesitan red
+args=(--no-progress --format=github)
+[[ -n "${GH_TOKEN:-}" ]] || args+=(--offline)
+if pytool "zizmor==${ZIZMOR_VERSION}" zizmor "${args[@]}" .github/workflows; then
   report WFL-01 "$severity" ok ""
 else
   report WFL-01 "$severity" fail "zizmor encontró problemas en .github/workflows: ver las anotaciones y https://docs.zizmor.sh/audits/"

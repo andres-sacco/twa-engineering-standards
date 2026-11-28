@@ -2,7 +2,8 @@
 # ARC-02: el servicio usa la librería de reglas de su arquitectura (twa-layered-rules o twa-hexagonal-rules) en una
 # versión mayor o igual a la mínima (params.minVersions de ARC-02 en config/controls.yml). Lee el pom efectivo: no
 # hace falta compilar.
-# Uso: check-architecture-version.sh SEVERIDAD ARQUITECTURA PARAMS_JSON [args de Maven…] (en el directorio del pom)
+# Uso: check-architecture-version.sh SEVERIDAD ARQUITECTURA PARAMS_JSON [args de Maven…] (en el directorio del pom).
+# Usa HELP_VERSION del entorno.
 set -euo pipefail
 # shellcheck source=scripts/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -21,7 +22,8 @@ min="$(jq -er --arg l "$library" '."ARC-02".minVersions[$l]' <<<"$params")" ||
 
 effective_pom="$(mktemp)"
 trap 'rm -f "$effective_pom"' EXIT
-if ! mvn -B -ntp -q help:effective-pom -Doutput="$effective_pom" "$@" >/dev/null 2>&1; then
+help="org.apache.maven.plugins:maven-help-plugin:${HELP_VERSION:?Falta HELP_VERSION (está en env: de java-ci.yml)}"
+if ! mvn -B -ntp -q "${help}:effective-pom" -Doutput="$effective_pom" "$@" >/dev/null 2>&1; then
   report ARC-02 "$severity" fail "No se pudo armar el pom efectivo (mvn help:effective-pom)"
   exit $?
 fi

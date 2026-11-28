@@ -41,7 +41,9 @@ patch se mergearía aunque el CI falle.
 ## Renovate self-hosted
 
 `renovate.yml` corre cada 6 horas (y a mano desde Actions) con la versión de Renovate fijada, y recorre los
-`andres-sacco/twa-*` a los que llega el token. Necesita dos secrets en **este** repo:
+`andres-sacco/twa-*` a los que llega el token. Loguea en `warn`: este repo es público y sus logs de Actions también, y
+en `info` Renovate lista los repos privados, sus dependencias y sus ramas. Para depurar, se corre a mano con
+`log-level: info` o `debug` (**a validar**: mover el workflow a un repo privado). Necesita dos secrets en **este** repo:
 
 | Secret | Qué es |
 |---|---|
