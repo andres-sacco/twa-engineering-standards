@@ -6,7 +6,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | # | Etapa | Entrega | Herramientas (open source) | Estado |
 |---|---|---|---|---|
 | 0 | Decisión y relevamiento | ADR-0013, [relevamiento](relevamiento.md), [política de severidades](politica-de-severidades.md) | — | Hecha |
-| 1 | Base del repo | Estructura, JSON Schema de `.twa-standards.yml`, versionado semver con tags móviles ([versionado](versionado.md)), CI propio, `examples/sample-service` | release-please, actionlint, zizmor, check-jsonschema, shellcheck | Hecha |
+| 1 | Base del repo | Estructura, JSON Schema de `.twa-standards.yml`, versionado semver con tags `vX.Y.Z` fijos ([versionado](versionado.md)), CI propio, `examples/sample-service` | release-please, actionlint, zizmor, check-jsonschema, shellcheck | Hecha |
 | 2 | Build, estilo y tests | `java-ci.yml` (un reutilizable para servicios y librerías) equivalente al `ci.yml` actual, más enforcer, cobertura y zizmor sobre los workflows del repo. Ver [uso](uso.md) | Maven Enforcer, Spotless, Surefire/Failsafe, JaCoCo, action-junit-report, zizmor. Sin PIT: mutation testing consume demasiados recursos para el CI | Hecha |
 | 3 | Arquitectura | En `java-ci.yml`: ARC-01 lee de los reportes de los tests qué reglas corrieron y cuáles rompen (con su id); ARC-02 exige la versión mínima de la librería. No define reglas | twa-layered-rules / twa-hexagonal-rules, pom efectivo | Hecha |
 | 4 | Seguridad | Job `Security` en `java-ci.yml`: secretos en archivos y commits, SAST, SBOM, vulnerabilidades y licencias sobre el SBOM. Ver [seguridad](seguridad.md) | Gitleaks, Semgrep CE, SpotBugs + FindSecBugs, CycloneDX, Trivy. Sin OSV-Scanner ni SonarQube | Hecha |
