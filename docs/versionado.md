@@ -6,13 +6,10 @@ ese repo sube la versión que usa (Renovate abre el PR, etapa 7).
 
 ## Tags
 
-| Tag | Qué es | Quién lo usa |
-|---|---|---|
-| `vX.Y.Z` | Un release, fijo. Lo crea release-please | Su SHA es el que fijan los consumidores; también es el `standards-ref` de ese release |
-| `vX.Y` | Móvil: apunta al último `vX.Y.Z` | Para ver cuál es el último release de una línea; un repo que acepte no fijar por SHA (apagando `WFL-01` con razón) |
-| `vX` | Móvil: apunta al último `vX.Y.Z` | Ídem, desde `1.0.0` |
-
-Los tags móviles los mueve `.github/workflows/release.yml` después de cada release.
+Solo hay tags `vX.Y.Z`, uno por release: los crea release-please y no se mueven. Su SHA es el que fijan los
+consumidores, y el tag es el `standards-ref` de ese release. No hay tags móviles (`vX`, `vX.Y`): ningún repo los
+necesita, porque todos fijan por SHA, y un tag que se mueve es justo lo que la protección de abajo evita. El último
+release está en la página de releases del repo o en `git ls-remote --tags`.
 
 ### Tags inmutables
 
@@ -22,8 +19,7 @@ repo no se pueden mover ni borrar. Se configura una vez, con permisos de adminis
 
 * **Releases inmutables** (Settings → General → Releases → *Enable release immutability*): el tag de cada release
   publicado queda fijo. O, si no está disponible,
-* **un ruleset de tags** que restringe actualizar y borrar `refs/tags/v*.*.*` (no alcanza a `vX` ni `vX.Y`, que
-  `release.yml` mueve):
+* **un ruleset de tags** que restringe actualizar y borrar `refs/tags/v*.*.*` (el que tiene este repo):
 
   ```bash
   gh api -X POST repos/andres-sacco/twa-engineering-standards/rulesets --input - <<'JSON'
@@ -33,11 +29,25 @@ repo no se pueden mover ni borrar. Se configura una vez, con permisos de adminis
   JSON
   ```
 
+Un segundo ruleset impide **crear** cualquier tag que no sea `refs/tags/v*.*.*` (`vX`, `vX.Y`, `latest`…): solo
+existen los tags de los releases.
+
+```bash
+gh api -X POST repos/andres-sacco/twa-engineering-standards/rulesets --input - <<'JSON'
+{"name": "Solo tags vX.Y.Z", "target": "tag", "enforcement": "active",
+ "conditions": {"ref_name": {"include": ["~ALL"], "exclude": ["refs/tags/v*.*.*"]}},
+ "rules": [{"type": "creation"}]}
+JSON
+```
+
+Los dos rulesets no tienen excepciones (*bypass*), ni siquiera para los administradores: release-please crea los
+`vX.Y.Z`, que pasan por el patrón.
+
 El job `Config` de `java-ci.yml` resuelve el tag a un commit una vez por corrida y lo deja en `twa-results`
 (`standardsSha`): todos los jobs corren lo mismo, y se puede ver qué commit corrió.
 
 **Mientras la versión sea `0.x`** (hasta que termine el piloto de la etapa 9) un cambio incompatible sube el minor, no
-el major (`bump-minor-pre-major`): un repo que siga un tag móvil usa `@v0.Y`, no `@v0`.
+el major (`bump-minor-pre-major`).
 
 ## Qué es un cambio incompatible
 
@@ -57,7 +67,7 @@ incompatible.
 1. Los commits a `main` siguen Conventional Commits (`feat:`, `fix:`, `docs:`…; `feat!:` o `BREAKING CHANGE:` para un
    cambio incompatible). Los PR se mergean con squash, con el título del PR como mensaje.
 2. release-please mantiene abierto un PR `chore: release X.Y.Z` con el `CHANGELOG.md` y la versión.
-3. Al mergear ese PR se crean el tag `vX.Y.Z` y el release de GitHub, y se mueven `vX` y `vX.Y`. El PR de release
+3. Al mergear ese PR se crean el tag `vX.Y.Z` y el release de GitHub. El PR de release
    también actualiza el default de `standards-ref` en `java-ci.yml` (la línea marcada con `x-release-please-version`),
    así el workflow de un release lee los scripts y el catálogo de ese mismo release.
 
@@ -72,10 +82,8 @@ release-please corre con el secret **`RELEASE_PLEASE_TOKEN`**, no con el `GITHUB
 
 Es un fine-grained token sobre **solo este repo** con Contents, Pull requests y Workflows en **Read and write**
 (Metadata: read se agrega solo). Se guarda en Settings → Secrets and variables → Actions. Al vencer, el workflow
-`Release` vuelve a fallar: se renueva y se corre de nuevo. Mover `vX` y `vX.Y` sigue con el `GITHUB_TOKEN` (solo
-mueve tags).
+`Release` vuelve a fallar: se renueva y se corre de nuevo.
 
 ## A validar
 
 * Que la rama `main` tenga protección con el check `Lint` y `Sample service / twa-standards` requeridos.
-* Que los tags `vX.Y.Z` estén protegidos ([arriba](#tags-inmutables)).

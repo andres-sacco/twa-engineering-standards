@@ -1,9 +1,8 @@
 name: Release
 
 # release-please mantiene un PR de release con el CHANGELOG a partir de los commits (Conventional Commits). Al
-# mergearlo crea el tag vX.Y.Z y el release, y este workflow mueve los tags vX y vX.Y a ese commit. Los repos
-# consumidores fijan java-ci.yml por el SHA de vX.Y.Z; vX y vX.Y sirven para ver el último release de cada línea
-# (ver docs/versionado.md).
+# mergearlo crea el tag vX.Y.Z y el release. Solo hay tags vX.Y.Z, fijos (protegidos por un ruleset): los repos
+# consumidores fijan java-ci.yml por el SHA de uno de ellos (ver docs/versionado.md).
 on:
   push:
     branches: [main]
@@ -21,11 +20,6 @@ jobs:
     permissions:
       contents: write # crea el tag vX.Y.Z, el release y la rama del PR de release
       pull-requests: write # abre y actualiza el PR de release
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      major: ${{ steps.release.outputs.major }}
-      minor: ${{ steps.release.outputs.minor }}
-      sha: ${{ steps.release.outputs.sha }}
     steps:
       # Con RELEASE_PLEASE_TOKEN y no con el GITHUB_TOKEN: el PR de release cambia .github/workflows/java-ci.yml (el
       # default de standards-ref) y el GITHUB_TOKEN no puede tocar workflows ("Error adding to tree"). Además, un PR
@@ -36,29 +30,3 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-
-  move-tags:
-    name: Move vX and vX.Y tags
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # mueve los tags vX y vX.Y
-    steps:
-      - name: Move tags
-        env:
-          GH_TOKEN: ${{ github.token }}
-          MAJOR: ${{ needs.release-please.outputs.major }}
-          MINOR: ${{ needs.release-please.outputs.minor }}
-          SHA: ${{ needs.release-please.outputs.sha }}
-        run: |
-          set -euo pipefail
-          for tag in "v${MAJOR}" "v${MAJOR}.${MINOR}"; do
-            # git/ref (singular) busca el tag exacto; git/refs/tags/v0 también devuelve v0.1.0 (busca por prefijo)
-            if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null 2>&1; then
-              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$SHA" -F force=true >/dev/null
-            else
-              gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="$SHA" >/dev/null
-            fi
-            echo "${tag} → ${SHA}"
-          done
