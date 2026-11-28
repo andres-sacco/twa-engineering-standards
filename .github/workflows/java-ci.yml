@@ -52,6 +52,9 @@ on:
 
 permissions: {}
 
+# Cada job tiene timeout-minutes: sin él, un test o un docker run colgado consume hasta 6 horas de runner. Un job que
+# se pasa del tiempo falla, y twa-standards con él
+
 env:
   # Versiones fijadas de los plugins que se agregan por línea de comandos (el pom del repo no los declara)
   # renovate: datasource=maven depName=org.jacoco:jacoco-maven-plugin
@@ -71,6 +74,7 @@ jobs:
   config:
     name: Config
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     outputs:
@@ -106,6 +110,7 @@ jobs:
     needs: config
     if: fromJSON(needs.config.outputs.severities)['BLD-01'] != 'off'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     defaults:
@@ -163,6 +168,7 @@ jobs:
     name: Build and test
     needs: config
     runs-on: ubuntu-latest
+    timeout-minutes: 45 # unit, IT con Testcontainers y SpotBugs
     permissions:
       contents: read
     defaults:
@@ -420,6 +426,7 @@ jobs:
       || fromJSON(needs.config.outputs.severities)['SEC-04'] != 'off'
       || fromJSON(needs.config.outputs.severities)['SEC-05'] != 'off'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     defaults:
@@ -556,6 +563,7 @@ jobs:
       || fromJSON(needs.config.outputs.severities)['DKR-03'] != 'off'
       || fromJSON(needs.config.outputs.severities)['DKR-04'] != 'off'
     runs-on: ubuntu-latest
+    timeout-minutes: 45 # build de la imagen con Maven adentro
     permissions:
       contents: read
     defaults:
@@ -677,6 +685,7 @@ jobs:
       fromJSON(needs.config.outputs.severities)['WFL-01'] != 'off'
       || fromJSON(needs.config.outputs.severities)['DEP-01'] != 'off'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -721,6 +730,7 @@ jobs:
     needs: [config, style, build, security, image, repository]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -742,7 +752,8 @@ jobs:
           path: ${{ runner.temp }}/twa-results
           merge-multiple: true
       # Una tabla con todos los controles y twa-results.json, que lee el tablero (docs/reportes.md)
-      - name: Summary
+      - id: summary
+        name: Summary
         if: needs.config.result == 'success'
         env:
           SEVERITIES: ${{ needs.config.outputs.severities }}
@@ -758,13 +769,20 @@ jobs:
           path: ${{ runner.temp }}/twa-results.json
           if-no-files-found: ignore
           retention-days: 30
+      # Falla si falló un job (un control en block) o si un control en block quedó sin evaluar porque un paso anterior
+      # en warn falló y lo salteó (ej. API-02 en block sin la spec de API-01)
       - name: Result
         env:
           RESULTS: ${{ toJSON(needs) }}
+          UNEVALUATED: ${{ steps.summary.outputs.unevaluated }}
         run: |
           failed="$(jq -r 'to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key' <<<"$RESULTS")"
           if [[ -n "$failed" ]]; then
             echo "::error::Fallaron: $(tr '\n' ' ' <<<"$failed")(los controles en block; ver el resumen de este job)"
+            exit 1
+          fi
+          if [[ -n "$UNEVALUATED" ]]; then
+            echo "::error::En block y sin evaluar: ${UNEVALUATED} (un paso anterior falló y los salteó; ver el resumen de este job)"
             exit 1
           fi
           echo "Todos los controles en block pasaron. Los avisos (warn) están en el resumen de este job."

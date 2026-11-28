@@ -8,7 +8,10 @@ tablero muestra ese último resultado.
 
 El job `twa-standards` (el check que se exige en la protección de la rama) deja en su resumen **una tabla con todos
 los controles**: severidad, resultado (✅, ⚠️ en warn, ❌ en block, ⏭️ sin evaluar, — sin resultado) y el detalle. Los
-apagados o que no aplican al tipo de repo van en una línea aparte. Es el único lugar donde mirar; el detalle de cada
+apagados o que no aplican al tipo de repo van en una línea aparte. Un control en `block` que quedó sin evaluar porque
+un paso anterior en `warn` falló y lo salteó (API-02 sin la spec de API-01, SEC-03 sin el SBOM, DKR-03 sin la imagen)
+sale como **❌ sin evaluar (block)** y hace fallar el check. Si su job no dejó ningún resultado (no pudo subir el
+artifact por la cuota) no se puede saber, y no cuenta: el job que falló ya hace fallar el check por su cuenta. Es el único lugar donde mirar; el detalle de cada
 hallazgo sigue en las anotaciones y en el resumen del job que lo encontró.
 
 Cómo se arma:
@@ -33,13 +36,14 @@ Cómo se arma:
   "standardsRef": "v0.2.0",
   "createdAt": "2026-11-27T18:43:07Z",
   "controls": [
-    {"id": "TST-01", "name": "Cobertura de líneas mínima", "severity": "warn", "result": "fail", "detail": "55% (mínimo 60%)"}
+    {"id": "TST-01", "name": "Cobertura de líneas mínima", "severity": "warn", "result": "fail", "detail": "55% (mínimo 60%)", "unevaluated": false}
   ]
 }
 ```
 
 `result` es `ok`, `fail`, `skip` (no se pudo evaluar por otra falla), `none` (no dejó resultado: el job no corrió) u
-`off` (apagado o no aplica).
+`off` (apagado o no aplica). `unevaluated` es `true` para un control en `block` con `skip` o `none` cuyo job sí dejó
+resultados (los jobs de cada control están en `jobs` de `config/controls.yml`).
 
 ## El tablero
 

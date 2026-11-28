@@ -31,11 +31,19 @@ gitleaks() {
     --redact --no-banner --exit-code 0 --report-format json --report-path "/reports/${report}.json"
 }
 
-gitleaks gitleaks-files dir .
+# Si Gitleaks no corre (no se pudo bajar la imagen…), el control falla con su severidad: en block, el PR no pasa
+# sin haber revisado los secretos
+if ! gitleaks gitleaks-files dir .; then
+  report SEC-01 "$severity" fail "Gitleaks no pudo correr sobre los archivos: ver el log de este step"
+  exit $?
+fi
 found_files="$(jq 'length' "${reports}/gitleaks-files.json")"
 found_commits=0
 if [[ -n "$range" ]]; then
-  gitleaks gitleaks-commits git --log-opts="$range" .
+  if ! gitleaks gitleaks-commits git --log-opts="$range" .; then
+    report SEC-01 "$severity" fail "Gitleaks no pudo correr sobre los commits ${range}: ver el log de este step"
+    exit $?
+  fi
   found_commits="$(jq 'length' "${reports}/gitleaks-commits.json")"
 fi
 

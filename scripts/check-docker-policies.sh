@@ -23,9 +23,12 @@ if [[ ! -f "$dockerfile" ]]; then
   report DKR-04 "$severity" fail "No existe ${dockerfile}"
   exit $?
 fi
-docker run --rm -v "${PWD}:/project:ro" -v "${STANDARDS_DIR}/config/conftest:/policy:ro" -v "${reports}:/reports" \
+if ! docker run --rm -v "${PWD}:/project:ro" -v "${STANDARDS_DIR}/config/conftest:/policy:ro" -v "${reports}:/reports" \
   -w /project "openpolicyagent/conftest:${CONFTEST_VERSION}" test --policy /policy --data /reports/conftest-data.json \
-  --parser dockerfile --no-fail --output json "$dockerfile" >"${reports}/conftest.json"
+  --parser dockerfile --no-fail --output json "$dockerfile" >"${reports}/conftest.json"; then
+  report DKR-04 "$severity" fail "Conftest no pudo correr: ver el log de este step"
+  exit $?
+fi
 while IFS= read -r msg; do
   [[ -z "$msg" ]] && continue
   problems+=("${msg%%:*}")
