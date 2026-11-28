@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.1.2...v0.2.0) (2026-11-28)
+
+
+### Funcionalidades
+
+* gobernanza de excepciones (GOV-01, GOV-02) y scripts por commit ([df18f7e](https://github.com/andres-sacco/twa-engineering-standards/commit/df18f7eb52aa53a944c8745394d59da1d87d2fa1))
+
 ## [0.1.2](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.1.1...v0.1.2) (2026-11-27)
 
 
