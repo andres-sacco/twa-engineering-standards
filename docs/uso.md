@@ -100,10 +100,12 @@ build solo baja dependencias públicas (sirve para un repo sin librerías TWA).
 | `Security` | `SEC-01` a `SEC-05` | Gitleaks sobre los archivos y los commits del PR; Semgrep; SBOM CycloneDX y, sobre el SBOM, vulnerabilidades con Trivy y licencias contra la lista permitida. Sube `security-reports` y `sbom`. Detalle y supresiones en [seguridad](seguridad.md) |
 | `Docker image` | `DKR-01` a `DKR-04` | Hadolint sobre el Dockerfile; construye la imagen con el `settings.xml` como secret y la carga en el runner (no la publica); Trivy sobre los paquetes del sistema operativo y los secretos de las capas; políticas TWA con Conftest. Sube `docker-reports`. Detalle en [docker](docker.md) |
 | `Repository` | `WFL-01`, `DEP-01`, `GOV-01`, `GOV-02` | zizmor sobre `.github/workflows`; `renovate.json` con el preset y sin Dependabot; las excepciones que agregan los commits nuevos y el formato de todas las supresiones del repo ([seguridad](seguridad.md#suprimir-un-hallazgo)) |
-| `twa-standards` | — | Una tabla con todos los controles en su resumen y el artifact `twa-results` (ver [reportes](reportes.md)); falla si falló algún job (un control en `block`) |
+| `twa-standards` | — | Una tabla con todos los controles en su resumen y el artifact `twa-results` (ver [reportes](reportes.md)); falla si falló algún job (un control en `block`) o si un control en `block` quedó sin evaluar |
 
 Cada job deja en su resumen una tabla con el resultado de cada control, y los que fallan en `warn` quedan como
-anotación (⚠️) sin fallar el check.
+anotación (⚠️) sin fallar el check. Si una herramienta no puede correr (no se baja su imagen, se cae), el control
+informa la falla con su severidad: en `warn` avisa, en `block` falla. Cada job tiene `timeout-minutes` (45 el build y
+la imagen, 30 `Security`, 15 o menos el resto).
 
 ### Diferencias con el `ci.yml` actual de los servicios
 

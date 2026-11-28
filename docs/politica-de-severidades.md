@@ -7,7 +7,7 @@ Cada control tiene un id (`BLD-01`, `SEC-03`…) que aparece en el mensaje cuand
 |---|---|
 | `off` | No corre. Solo con una razón escrita en `.twa-standards.yml` (ej. un repo sin Dockerfile) |
 | `warn` | Corre, lo reporta en el resumen del PR y en los artifacts, y **no** falla el check |
-| `block` | Falla el check `twa-standards`, que es requerido para mergear en `main` |
+| `block` | Falla el check `twa-standards`, que es requerido para mergear en `main`. También lo falla si no se pudo evaluar (un paso anterior en `warn` falló y lo salteó) |
 
 ## Reglas
 

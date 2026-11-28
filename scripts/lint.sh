@@ -128,11 +128,15 @@ for id in "${ids[@]}"; do
   [[ "$id" =~ $ID_PATTERN ]] || fail "$id: no cumple ${ID_PATTERN}"
   severity="$(yq ".controls.\"$id\".severity" "$CATALOG")"
   [[ "$severity" =~ ^(off|warn|block)$ ]] || fail "$id: severity '$severity' no es off, warn ni block"
-  for field in name tool stage appliesTo; do
+  for field in name tool stage appliesTo jobs; do
     [[ "$(yq ".controls.\"$id\" | has(\"$field\")" "$CATALOG")" == "true" ]] || fail "$id: falta '$field'"
   done
   if yq ".controls.\"$id\".appliesTo[]" "$CATALOG" | grep -qvE '^(service|library)$'; then
     fail "$id: appliesTo solo admite service y library"
+  fi
+  # Los jobs de java-ci.yml que informan el control: summary.sh los usa para saber si uno en block quedó sin evaluar
+  if yq ".controls.\"$id\".jobs[]" "$CATALOG" | grep -qvE '^(style|build|security|image|repository)$'; then
+    fail "$id: jobs solo admite style, build, security, image y repository"
   fi
 done
 [[ "$(yq '.implementedStages | type' "$CATALOG")" == "!!seq" ]] || fail "implementedStages tiene que ser una lista de etapas"

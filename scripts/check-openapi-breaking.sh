@@ -29,8 +29,11 @@ for spec in "${reports}"/specs/*.json; do
   name="$(basename "$spec" .json)"
   [[ -f "${baseline}/${name}.json" ]] || continue
   compared+=("$name")
-  docker run --rm -v "${baseline}:/base:ro" -v "${reports}/specs:/revision:ro" "$image" \
-    breaking "/base/${name}.json" "/revision/${name}.json" --format json >"${reports}/oasdiff-${name}.json"
+  if ! docker run --rm -v "${baseline}:/base:ro" -v "${reports}/specs:/revision:ro" "$image" \
+    breaking "/base/${name}.json" "/revision/${name}.json" --format json >"${reports}/oasdiff-${name}.json"; then
+    report API-03 "$severity" fail "oasdiff no pudo correr sobre la spec de ${name}: ver el log de este step"
+    exit $?
+  fi
   count="$(jq '[.[]? | select(.level == 3)] | length' "${reports}/oasdiff-${name}.json")"
   total=$((total + count))
   ((count == 0)) || details+=("${name}: $(jq -r '[.[] | select(.level == 3) | .id] | unique | join(", ")' "${reports}/oasdiff-${name}.json")")

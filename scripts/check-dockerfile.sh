@@ -21,7 +21,10 @@ fi
 hadolint() {
   docker run --rm -i "hadolint/hadolint:${HADOLINT_VERSION}" hadolint --no-fail "$@" - <"$dockerfile"
 }
-hadolint -f json >"${reports}/hadolint.json"
+if ! hadolint -f json >"${reports}/hadolint.json"; then
+  report DKR-02 "$severity" fail "Hadolint no pudo correr: ver el log de este step"
+  exit $?
+fi
 hadolint -f sarif >"${reports}/hadolint.sarif" || true
 
 findings='[.[] | select(.level == "error" or .level == "warning")]'

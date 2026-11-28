@@ -7,7 +7,7 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
 ## Estructura
 
 - `config/controls.yml`: **catálogo de controles**, fuente de verdad de los ids (`BLD-01`, `SEC-03`…), la severidad por
-  defecto, la herramienta y la etapa. Un id no se reusa.
+  defecto, la herramienta, la etapa y los jobs de `java-ci.yml` que lo informan (`jobs`). Un id no se reusa.
 - `schema/twa-standards.schema.json`: el formato del `.twa-standards.yml` de cada repo. Casos de prueba en
   `schema/tests/valid` y `schema/tests/invalid` (cada inválido, con un comentario que dice por qué).
 - `.github/workflows/java-ci.yml`: **el** workflow reutilizable (servicios y librerías). Un job por grupo de
@@ -38,7 +38,7 @@ de arquitectura no van acá**: están en `../twa-layered-rules` (y `../twa-hexag
 
 - **Idioma:** español en documentación, comentarios, mensajes de salida y commits. Nombres de herramientas, inputs,
   outputs y claves de YAML en inglés.
-- **Un control nuevo** se agrega en `config/controls.yml` y en la tabla de `docs/politica-de-severidades.md` con la
+- **Un control nuevo** se agrega en `config/controls.yml` (con sus `jobs`) y en la tabla de `docs/politica-de-severidades.md` con la
   misma severidad (`make lint` lo compara), entra en `warn` salvo lo que hoy ya bloquea, y termina con
   `report ID SEVERIDAD ok|fail "detalle"` (`scripts/lib.sh`), que es lo que decide si falla. Al terminar una etapa se
   agrega a `implementedStages`, y se actualizan `docs/uso.md` (qué corre) y `docs/plan.md`.

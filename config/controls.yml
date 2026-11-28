@@ -4,8 +4,9 @@
 #
 # severity: la severidad por defecto (off | warn | block). appliesTo: los tipos de repo donde corre (service, library).
 # stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa que no está en implementedStages
-# se pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
-# se combinan encima.
+# se pueden configurar pero todavía no corren. jobs: los jobs de java-ci.yml que lo informan (summary.sh los usa para
+# saber si un control en block quedó sin evaluar). params: los parámetros por defecto; los del .twa-standards.yml del
+# repo se combinan encima.
 implementedStages: [1, 2, 3, 4, 5, 6, 7, 10]
 controls:
   BLD-01:
@@ -13,30 +14,35 @@ controls:
     tool: Spotless
     severity: block
     stage: 2
+    jobs: [style]
     appliesTo: [service, library]
   BLD-02:
     name: Compila y pasan los tests unitarios y de integración
     tool: Maven, Surefire, Failsafe
     severity: block
     stage: 2
+    jobs: [build]
     appliesTo: [service, library]
   BLD-03:
     name: Versiones de Java y Maven exigidas
     tool: maven-enforcer-plugin
     severity: warn
     stage: 2
+    jobs: [build]
     appliesTo: [service, library]
   BLD-04:
     name: Convergencia de dependencias y dependencias prohibidas
     tool: maven-enforcer-plugin
     severity: warn
     stage: 2
+    jobs: [build]
     appliesTo: [service, library]
   TST-01:
     name: Cobertura de líneas mínima
     tool: JaCoCo
     severity: warn
     stage: 2
+    jobs: [build]
     appliesTo: [service, library]
     params:
       minLineCoverage: 60 # provisorio: se ajusta con lo que midan los repos en warn
@@ -45,6 +51,7 @@ controls:
     tool: JaCoCo
     severity: warn
     stage: 2
+    jobs: [build]
     appliesTo: [service, library]
     params:
       maxDrop: 0.5 # puntos de cobertura que puede bajar un PR respecto de la rama principal
@@ -53,12 +60,14 @@ controls:
     tool: ArchUnit (librería existente)
     severity: block
     stage: 3
+    jobs: [build]
     appliesTo: [service]
   ARC-02:
     name: Versión mínima de la librería de reglas
     tool: Maven (pom efectivo)
     severity: warn
     stage: 3
+    jobs: [build]
     appliesTo: [service]
     params:
       # La versión mínima de cada librería de reglas. Se sube cuando una versión nueva de la librería vuelve obligatoria
@@ -71,12 +80,14 @@ controls:
     tool: Gitleaks
     severity: block
     stage: 4
+    jobs: [security]
     appliesTo: [service, library]
   SEC-02:
     name: Análisis estático de seguridad
     tool: Semgrep CE, SpotBugs + FindSecBugs
     severity: warn
     stage: 4
+    jobs: [build, security]
     appliesTo: [service, library]
     params:
       # Reglas de Semgrep (registry o archivos del repo). Se excluyen los tests (src/test)
@@ -86,6 +97,7 @@ controls:
     tool: Trivy (sobre el SBOM)
     severity: warn
     stage: 4
+    jobs: [security]
     appliesTo: [service, library]
     params:
       severities: [CRITICAL, HIGH]
@@ -94,12 +106,14 @@ controls:
     tool: CycloneDX Maven plugin
     severity: warn
     stage: 4
+    jobs: [security]
     appliesTo: [service, library]
   SEC-05:
     name: Licencias de dependencias fuera de la lista permitida
     tool: SBOM (CycloneDX) contra la lista permitida
     severity: warn
     stage: 4
+    jobs: [security]
     appliesTo: [service, library]
     params:
       # Ids SPDX permitidos. Una dependencia con varias licencias (doble licencia) pasa si al menos una está acá
@@ -135,12 +149,14 @@ controls:
     tool: springdoc + OpenApiIT (target/openapi.json)
     severity: warn
     stage: 5
+    jobs: [build]
     appliesTo: [service]
   API-02:
     name: La spec cumple las convenciones de la plataforma
     tool: Spectral
     severity: warn
     stage: 5
+    jobs: [build]
     appliesTo: [service]
     params:
       # Reglas de config/spectral/twa.yaml que el repo apaga (con la razón en un comentario de su .twa-standards.yml)
@@ -150,24 +166,28 @@ controls:
     tool: oasdiff
     severity: warn
     stage: 5
+    jobs: [build]
     appliesTo: [service]
   DKR-01:
     name: La imagen construye
     tool: Docker Buildx
     severity: block
     stage: 2
+    jobs: [image]
     appliesTo: [service]
   DKR-02:
     name: Buenas prácticas del Dockerfile
     tool: Hadolint
     severity: warn
     stage: 6
+    jobs: [image]
     appliesTo: [service]
   DKR-03:
     name: Vulnerabilidades CRITICAL/HIGH con fix en la imagen
     tool: Trivy (image, paquetes del sistema operativo)
     severity: warn
     stage: 6
+    jobs: [image]
     appliesTo: [service]
     params:
       severities: [CRITICAL, HIGH]
@@ -176,6 +196,7 @@ controls:
     tool: Conftest (OPA), Trivy (secretos en las capas)
     severity: warn
     stage: 6
+    jobs: [image]
     appliesTo: [service]
     params:
       # Políticas de config/conftest/dockerfile.rego que el repo exceptúa (TWA-DOCKER-NN), con la razón en un comentario
@@ -185,22 +206,26 @@ controls:
     tool: Renovate
     severity: warn
     stage: 7
+    jobs: [repository]
     appliesTo: [service, library]
   WFL-01:
     name: Actions fijadas por SHA y permissions mínimos
     tool: zizmor
     severity: warn
     stage: 2
+    jobs: [repository]
     appliesTo: [service, library]
   GOV-01:
     name: Las excepciones nuevas quedan a la vista
     tool: git diff (supresiones, archunit_store, .twa-standards.yml)
     severity: warn
     stage: 10
+    jobs: [repository]
     appliesTo: [service, library]
   GOV-02:
     name: Las supresiones tienen razón y vencimiento
     tool: Archivos de supresión de cada herramienta
     severity: warn
     stage: 10
+    jobs: [repository]
     appliesTo: [service, library]
