@@ -7,9 +7,10 @@ on:
     branches: [main]
   pull_request:
 
+# En un PR, un push nuevo cancela la corrida anterior; en main no, para que cada push guarde sus líneas de base
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions: {}
 
@@ -23,8 +24,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # actionlint (Docker), zizmor y check-jsonschema (pipx), y los chequeos de consistencia de scripts/lint.sh
+      # actionlint (Docker), zizmor y check-jsonschema (pipx), y los chequeos de consistencia de scripts/lint.sh. Con
+      # GH_TOKEN, zizmor corre también las auditorías que consultan GitHub
       - name: make lint
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: make lint
 
   # El workflow reutilizable, con el código de este commit, sobre el servicio de prueba: es la prueba de punta a punta

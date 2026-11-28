@@ -69,6 +69,9 @@ env:
   FINDSECBUGS_VERSION: 1.14.0
   # renovate: datasource=maven depName=org.cyclonedx:cyclonedx-maven-plugin
   CYCLONEDX_VERSION: 2.9.3
+  # help:evaluate y help:effective-pom (BLD-03, ARC-02): sin versión, Maven usaría la última que encuentre
+  # renovate: datasource=maven depName=org.apache.maven.plugins:maven-help-plugin
+  HELP_VERSION: 3.5.2
 
 jobs:
   config:
@@ -147,11 +150,8 @@ jobs:
           java-version: ${{ needs.config.outputs.java }}
           cache: maven
           cache-dependency-path: ${{ inputs.working-directory }}/**/pom.xml
-      - name: Maven settings
-        env:
-          PACKAGES_USER: ${{ github.repository_owner }}
-          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
-        run: mkdir -p ~/.m2 && "$STANDARDS_DIR/scripts/maven-settings.sh" >~/.m2/settings.xml
+      # Sin settings.xml ni PACKAGES_TOKEN: spotless:check no resuelve las dependencias del proyecto, y el token no
+      # tiene por qué llegar a un job que no lo usa
       - name: BLD-01 Spotless
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['BLD-01'] }}
@@ -711,9 +711,12 @@ jobs:
             echo "TWA_RESULTS_FILE=$RUNNER_TEMP/twa-results/repository.jsonl"
             echo "TWA_JOB=repository"
           } >>"$GITHUB_ENV"
+      # Con token, zizmor corre las auditorías que consultan GitHub: un SHA que no es de la action (impostor-commit), un
+      # tag y una rama con el mismo nombre (ref-confusion), versiones con vulnerabilidades conocidas
       - name: WFL-01 zizmor
         env:
           SEVERITY: ${{ fromJSON(needs.config.outputs.severities)['WFL-01'] }}
+          GH_TOKEN: ${{ github.token }}
         run: '"$STANDARDS_DIR/scripts/check-workflows.sh" "$SEVERITY"'
       - name: DEP-01 Renovate
         env:

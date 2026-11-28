@@ -71,7 +71,7 @@ mezcla `@v4` y `@v7`.
 ## Divergencias para resolver en la etapa 2
 
 1. Dos formas de armar el `settings.xml` (`setup-java` en catalog y exchange-rates, `maven-settings.sh` en el resto):
-   pasa a una composite action.
+   pasa a `scripts/maven-settings.sh` de este repo (no a una composite action: ver el [plan](plan.md#decisiones-de-la-etapa-2)).
 2. catalog no tiene `maven-enforcer-plugin`; el resto exige Maven y, algunos, Java: pasa a ser el control `BLD-03`.
 3. Versiones de las actions distintas entre servicios y librerías: se unifican y se fijan por SHA (`WFL-01`).
 

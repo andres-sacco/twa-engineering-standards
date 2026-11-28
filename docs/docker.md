@@ -33,8 +33,9 @@ que es la imagen que se publica:
 Además, Trivy busca secretos en todas las capas de la imagen construida: un token que se copió sin querer aparece
 aunque el Dockerfile no lo nombre.
 
-Los seis servicios y el de prueba cumplen las cuatro políticas: `DKR-04` es candidato a pasar a `block` apenas corra
-en `warn` (política de severidades).
+Los seis servicios y el de prueba cumplen las cuatro políticas: `DKR-04` es el primer candidato a pasar a `block`,
+cuando cumpla la regla 2 de la [política de severidades](politica-de-severidades.md#reglas) en cada repo (dos semanas o
+10 PR en `warn`).
 
 ### Exceptuar una política
 

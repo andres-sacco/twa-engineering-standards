@@ -88,7 +88,8 @@ workflow nuevo no hay contra qué comparar y API-03 pasa.
 
 **Un cambio incompatible a propósito** se aprueba con la etiqueta `api-breaking-change` en el PR: API-03 pasa e
 informa los cambios. La etiqueta no avisa a nadie: antes se revisa a quién le pega (skill `impact` de twa-dev-flow) y
-se coordina con los consumidores. Si la etiqueta se pone después de que corrió el CI, hay que volver a correrlo.
+se coordina con los consumidores. Con los `types` del `ci.yml` de [uso](uso.md#2-githubworkflowsciyml), poner o
+sacar la etiqueta vuelve a correr el CI; sin ellos, hay que volver a correrlo a mano.
 
 ## Probarlo en local
 
