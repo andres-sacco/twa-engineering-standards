@@ -28,7 +28,7 @@
       "description": "Solo los controles que cambian su default. La clave es el id del control.",
       "type": "object",
       "propertyNames": {
-        "pattern": "^(BLD|TST|ARC|SEC|API|DKR|DEP|WFL)-[0-9]{2}$"
+        "pattern": "^(BLD|TST|ARC|SEC|API|DKR|DEP|WFL|GOV)-[0-9]{2}$"
       },
       "additionalProperties": {
         "$ref": "#/$defs/control"
@@ -47,6 +47,10 @@
           "description": "Por qué este repo cambia el default. Obligatoria para apagar un control; también para bajarle la severidad (lo verifica el workflow contra config/controls.yml).",
           "type": "string",
           "minLength": 10
+        },
+        "until": {
+          "description": "Hasta cuándo vale una excepción temporal (AAAA-MM-DD). Vencida, GOV-02 la marca: se vuelve al default o se renueva con su razón.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
         },
         "params": {
           "description": "Parámetros propios del control (ej. el umbral de cobertura de TST-01).",

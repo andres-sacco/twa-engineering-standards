@@ -1,0 +1,8 @@
+# until es una fecha AAAA-MM-DD
+version: 1
+type: service
+controls:
+  TST-01:
+    severity: "off"
+    reason: Los tests se migran a JUnit 6 en este sprint
+    until: fin de mes

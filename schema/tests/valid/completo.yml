@@ -13,3 +13,9 @@ controls:
   SEC-03:
     params:
       ignoreUnfixed: true
+  BLD-04:
+    severity: "off"
+    reason: Conflicto de versiones de Netty hasta subir Spring Boot
+    until: 2027-03-31
+  GOV-01:
+    severity: block

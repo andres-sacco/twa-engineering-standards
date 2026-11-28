@@ -15,6 +15,7 @@ de twa-platform. Los controles y su severidad, en la [política de severidades](
 | 7 | Dependencias | Preset central de Renovate (grupos, 3 días de espera, actions e imágenes por digest, automerge de patch con CI verde), Renovate self-hosted en `renovate.yml` y DEP-01. Ver [dependencias](dependencias.md) | Renovate, renovate-config-validator | Hecha |
 | 8 | Reportes | Una tabla con todos los controles en el job `twa-standards` y el artifact `twa-results`; tablero con el último push de cada repo (`make report`). Sin escaneo nocturno. Ver [reportes](reportes.md) | `$GITHUB_STEP_SUMMARY`, artifacts, jq | Hecha |
 | 9 | Despliegue | catalog como piloto; después exchange-rates, proveedores, search, reservations y las librerías. `warn` → `block` según la política. Ver [despliegue](despliegue.md) | Branch protection (check `ci / twa-standards`). CODEOWNERS cuando haya más de un mantenedor | En curso: piloto con catalog |
+| 10 | Gobernanza de excepciones | En el job `Repository`: GOV-01 avisa las supresiones y las severidades que agrega cada PR; GOV-02 verifica que tengan razón y vencimiento. `standards-ref` se resuelve a un commit una vez por corrida. Ver [seguridad](seguridad.md#suprimir-un-hallazgo) | git, yq | Hecha |
 
 ## Estructura objetivo
 
@@ -115,6 +116,27 @@ twa-engineering-standards/
 * Las versiones fijadas en scripts y workflows llevan un comentario `# renovate:` y las actualiza un `customManager`
   del preset: este repo se mantiene con su propio preset.
 * Las etapas 4 a 6 seguían pendientes: `implementedStages` del catálogo reemplaza a un número de etapa.
+
+## Decisiones de la etapa 10
+
+Salen de una auditoría del pipeline (2026-11-28): con un solo mantenedor nadie revisa el PR que suprime un hallazgo o
+baja una severidad, y el SHA que fija cada repo no fijaba los scripts.
+
+* **GOV-01 avisa, no bloquea:** una supresión con razón es legítima. El aviso (⚠️ en el resumen y una anotación por
+  excepción) es lo que hace que se mire. Cuenta los archivos de supresión, `archunit_store` (violaciones congeladas),
+  los `nosemgrep` y `hadolint ignore` agregados y los controles de `.twa-standards.yml` con menos severidad o con otros
+  params.
+* **GOV-02 verifica el formato de la regla 4:** `statement` y `expired_at` en `.trivyignore.yaml`, un comentario antes
+  de cada línea de `.gitleaksignore`, `.semgrepignore` y de cada `<Match>` de `spotbugs-exclude.xml`, la razón al lado
+  de `nosemgrep` y `hadolint ignore`, y `until` sin vencer en `.twa-standards.yml`. `until` es opcional: hay excepciones
+  permanentes (un servicio sin base de datos).
+* **`standards-ref` se resuelve a un commit en el job `Config`** y los demás jobs usan ese commit: todos corren los
+  mismos scripts aunque el tag se mueva a mitad de la corrida, y `twa-results` lo registra (`standardsSha`). Que el tag
+  no se mueva lo garantiza GitHub (releases inmutables o un ruleset sobre `refs/tags/v*.*.*`, ver
+  [versionado](versionado.md#tags-inmutables)), no el workflow: release-please no puede escribir el SHA del release en
+  el PR que lo crea.
+* **El automerge del preset se limita a las imágenes de los Dockerfile** (manager `dockerfile`), y este repo no
+  mergea nada solo (`renovate.json`): una herramienta o una action nueva cambia el CI de todos los repos.
 
 ## A validar
 

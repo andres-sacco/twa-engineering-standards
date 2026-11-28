@@ -147,7 +147,10 @@
       "dependencyDashboardApproval": true
     },
     {
-      "description": "Imágenes base: los digest y los patch se mergean solos con el CI en verde",
+      "description": "Imágenes base de los Dockerfile: los digest y los patch se mergean solos con el CI en verde. Solo el manager dockerfile: las imágenes de las herramientas (docker-compose, versiones en scripts) no se mergean solas",
+      "matchManagers": [
+        "dockerfile"
+      ],
       "matchDatasources": [
         "docker"
       ],

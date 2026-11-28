@@ -31,6 +31,7 @@ Cómo se arma:
   "event": "push",
   "run": "https://github.com/andres-sacco/twa-flights-catalog/actions/runs/…",
   "standardsRef": "v0.2.0",
+  "standardsSha": "…",
   "createdAt": "2026-11-27T18:43:07Z",
   "controls": [
     {"id": "TST-01", "name": "Cobertura de líneas mínima", "severity": "warn", "result": "fail", "detail": "55% (mínimo 60%)"}
