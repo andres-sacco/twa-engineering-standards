@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.2.2...v0.2.3) (2026-11-28)
+
+
+### Documentación
+
+* documenta el ruleset que solo permite crear tags vX.Y.Z ([da95d7f](https://github.com/andres-sacco/twa-engineering-standards/commit/da95d7f4e26f10ca79c9453e804e4c2adf3ef7dc))
+
 ## [0.2.2](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.2.1...v0.2.2) (2026-11-28)
 
 
