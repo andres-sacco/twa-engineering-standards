@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>andres-sacco/twa-engineering-standards//renovate/default"]
+  "extends": ["github>andres-sacco/twa-engineering-standards//renovate/default"],
+  "packageRules": [
+    {
+      "description": "En este repo nada se mergea solo: una herramienta o una action nueva cambia el CI de todos los repos TWA. Va al final para pisar el automerge del preset",
+      "matchPackageNames": ["*"],
+      "automerge": false
+    }
+  ]
 }

@@ -118,6 +118,16 @@ set_output() {
   fi
 }
 
+# Los commits nuevos de la corrida, como base..head: los del PR (PR_BASE..PR_HEAD) o los del push
+# (PUSH_BEFORE..GITHUB_SHA). Vacío si no hay commit anterior (push de una rama nueva) o fuera de un PR o un push
+event_range() {
+  if [[ -n "${PR_BASE:-}" && -n "${PR_HEAD:-}" ]]; then
+    echo "${PR_BASE}..${PR_HEAD}"
+  elif [[ -n "${PUSH_BEFORE:-}" && ! "${PUSH_BEFORE}" =~ ^0+$ && -n "${GITHUB_SHA:-}" ]]; then
+    echo "${PUSH_BEFORE}..${GITHUB_SHA}"
+  fi
+}
+
 # Directorio de los reportes de seguridad (SARIF, JSON, SBOM) que el workflow sube como artifact
 reports_dir() {
   local dir="${REPORTS_DIR:-${PWD}/target/twa-reports}"

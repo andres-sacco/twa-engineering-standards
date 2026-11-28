@@ -44,14 +44,16 @@ Gitleaks y Trivy corren con Docker, fijados por versión y digest (`scripts/lib.
 ## Suprimir un hallazgo
 
 La regla 4 de la [política de severidades](politica-de-severidades.md): se suprime el hallazgo, no el control, con la
-razón al lado.
+razón al lado. `GOV-02` (job `Repository`) verifica el formato de cada supresión de esta tabla, y `GOV-01` avisa en el
+PR cada una que se agrega o cambia, junto con las violaciones de arquitectura congeladas (`archunit_store`) y las
+severidades bajadas en `.twa-standards.yml`.
 
 | Control | Dónde | Cómo |
 |---|---|---|
-| `SEC-01` | `.gitleaksignore` en la raíz del repo | Una línea con el `Fingerprint` del hallazgo (está en `gitleaks-*.json` del artifact) y un comentario `#` con la razón. **Un secreto real no se suprime: se rota.** Reglas propias, en `.gitleaks.toml` |
-| `SEC-02` Semgrep | La línea del código | `// nosemgrep: <id de la regla> <razón>` |
-| `SEC-02` SpotBugs | `spotbugs-exclude.xml` en `working-directory` | Un `<Match>` de [FindBugsFilter](https://spotbugs.readthedocs.io/en/latest/filter.html) con la clase y el `<Bug pattern="…"/>`, y un comentario con la razón |
-| `SEC-03` | `.trivyignore.yaml` en `working-directory` | El id en `vulnerabilities`, con `statement` (la razón) y `expired_at` (al vencer vuelve a aparecer) |
+| `SEC-01` | `.gitleaksignore` en la raíz del repo | Una línea con el `Fingerprint` del hallazgo (está en `gitleaks-*.json` del artifact), con un comentario `# razón` en la línea anterior. **Un secreto real no se suprime: se rota.** Reglas propias, en `.gitleaks.toml` |
+| `SEC-02` Semgrep | La línea del código | `// nosemgrep: <id de la regla> <razón>`. Un archivo entero, en `.semgrepignore`, con un comentario `# razón` en la línea anterior |
+| `SEC-02` SpotBugs | `spotbugs-exclude.xml` en `working-directory` | Un `<Match>` de [FindBugsFilter](https://spotbugs.readthedocs.io/en/latest/filter.html) con la clase y el `<Bug pattern="…"/>`, con un comentario `<!-- razón -->` antes |
+| `SEC-03` | `.trivyignore.yaml` en `working-directory` | El id en `vulnerabilities`, con `statement` (la razón) y `expired_at` (al vencer vuelve a aparecer). No `.trivyignore`: no tiene dónde poner la razón |
 | `SEC-05` | `.twa-standards.yml` | `params.allowedComponents` (`group:artifact`) o `params.extraAllowedLicenses` (id SPDX) de `SEC-05`, con la razón en un comentario |
 
 Ejemplo de `.trivyignore.yaml`:

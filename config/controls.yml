@@ -6,7 +6,7 @@
 # stage: la etapa del plan (docs/plan.md) que lo implementa. Los controles de una etapa que no está en implementedStages
 # se pueden configurar pero todavía no corren. params: los parámetros por defecto; los del .twa-standards.yml del repo
 # se combinan encima.
-implementedStages: [1, 2, 3, 4, 5, 6, 7]
+implementedStages: [1, 2, 3, 4, 5, 6, 7, 10]
 controls:
   BLD-01:
     name: Formato del código
@@ -191,4 +191,16 @@ controls:
     tool: zizmor
     severity: warn
     stage: 2
+    appliesTo: [service, library]
+  GOV-01:
+    name: Las excepciones nuevas quedan a la vista
+    tool: git diff (supresiones, archunit_store, .twa-standards.yml)
+    severity: warn
+    stage: 10
+    appliesTo: [service, library]
+  GOV-02:
+    name: Las supresiones tienen razón y vencimiento
+    tool: Archivos de supresión de cada herramienta
+    severity: warn
+    stage: 10
     appliesTo: [service, library]
