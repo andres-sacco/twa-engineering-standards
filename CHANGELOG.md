@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.2.0...v0.2.1) (2026-11-28)
+
+
+### Correcciones
+
+* el gate falla con controles en block sin evaluar o herramientas caídas ([2864c50](https://github.com/andres-sacco/twa-engineering-standards/commit/2864c5067c64bec0195def0c046cfb23c0226f08))
+
 ## [0.2.0](https://github.com/andres-sacco/twa-engineering-standards/compare/v0.1.2...v0.2.0) (2026-11-28)
 
 
